@@ -9,8 +9,15 @@ class UserRepository:
     self.collection = db.collection(u"users")
     self.user_schema = user_schema
 
-  def create_user(self, user: User) -> User:
+  def add_user(self, user: User) -> User:
     _, user_ref = self.collection.add(self.user_schema.to_firebase_user(user))
-    # user.id = user_ref.id
+    user.id = user_ref.id
     return user
 
+  def get_user_by_email(self, email: str) -> User | None:
+    user = self.collection.where(
+      u'email', u'==', email
+    ).get()
+    if user:
+      return self.user_schema.to_user(user[0])
+    return None

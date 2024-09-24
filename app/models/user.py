@@ -1,13 +1,14 @@
 from typing import Optional
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 
 class User(BaseModel):
+    id: Optional[str] = None
     username: str
     email: str
     password: str
-    full_name: Optional[str]
-    role: Optional[str]
-    is_active: Optional[bool]
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = True
 
 
 class UserResponse(BaseModel):
@@ -16,6 +17,3 @@ class UserResponse(BaseModel):
     full_name: str
     role: str
     is_active: bool
-
-    class Config:
-        orm_mode = True

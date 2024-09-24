@@ -25,12 +25,19 @@ class UserService:
     pass
 
   def create_user(self, user: User) -> User:
-    # TODO: Check if user exists
+    # Data Validation
+    if not user.email or not user.password:
+      raise ValueError('Email and password are required')
+
+    # Check if user already exists
+    if self.repository.get_user_by_email(user.email):
+      raise ValueError('User already exists')
+
     # TODO: Salt and hash password
     # TODO: Insert user into the database
     # Business Logic Validation
 
-    return self.repository.create_user(user)
+    return self.repository.add_user(user)
 
   def update_user(self):
     pass
