@@ -6,7 +6,6 @@ from fastapi import (
   Depends
 )
 
-from app.models.user import User
 from app.repository.user import UserRepository
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
@@ -77,8 +76,3 @@ async def delete_user(
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
   return {"message": 'User deleted successfully'}
-
-# Route /me
-# async def get_user_me():
-#         return {"message": "Get me"}
-
