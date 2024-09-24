@@ -12,10 +12,15 @@ router = APIRouter(prefix='/user', tags=['users'])
 # Get all users and return a list of users
 @router.get('/')
 async def get_users():
-    return {"message": "Get all users"}
+  pass
 
 # Create a new user and return the new user
-@router.post('/', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+  '/',
+  response_model=UserResponse,
+  status_code=status.HTTP_201_CREATED,
+  description='Create a new user in the database',
+  response_description='User created successfully')
 async def create_user(user: User):
   user_model_dump = user.model_dump()
   try:

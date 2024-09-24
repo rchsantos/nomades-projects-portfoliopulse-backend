@@ -14,10 +14,10 @@ class UserRepository:
     user.id = user_ref.id
     return user
 
-  def get_user_by_email(self, email: str) -> User | None:
+  def get_user_by_email(self, email: str) -> bool:
     user = self.collection.where(
       u'email', u'==', email
     ).get()
     if user:
-      return self.user_schema.to_user(user[0])
-    return None
+      return True
+    return False
