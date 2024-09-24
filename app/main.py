@@ -1,20 +1,33 @@
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.routes import user
+
+# Load environment variables
+# basedir = pathlib.Path(__file__).parent[1]
+# load_dotenv(basedir / '.env')
 
 # Initialize fastapi app
-app = FastAPI()
+app = FastAPI(
+  debug = True,
+  title = 'PortfolioPulse Demo API',
+  description = 'This is a demo API for PortfolioPulse',
+  version = '0.1.0'
+)
+prefix = "/api/v1"
 
+# Adding CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 # Including the routers.
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
+app.include_router(user.router, prefix=prefix)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=False)
+    uvicorn.run('main:app', host="0.0.0.0", port=5050, reload=True)

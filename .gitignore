@@ -2,6 +2,7 @@
 .DS_Store
 .idea
 
-
 .env
 __pycache__
+
+app/core/service-account-file.json

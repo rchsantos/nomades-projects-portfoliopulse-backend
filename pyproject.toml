@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "portfoliopulse-backend"
+version = "0.1.0"
+description = "Application to manage and control financial portfolios of stock market assets."
+authors = ["rsantos <rpsantosvix@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+uvicorn = "^0.30.6"
+sqlmodel = "^0.0.22"
+firebase-admin = "^6.5.0"
+python-dotenv = "^1.0.1"
+marshmallow = "^3.22.0"
+pydantic = "^2.9.2"
+python-multipart = "^0.0.10"
+bcrypt = "^4.2.0"
+passlib = "^1.7.4"
+email-validator = "^2.2.0"
+
+[tool.poetry.scripts]
+start-app = "uvicorn app.main:app --host 0.0.0.0 --port 5050 --reload"
+lint = "flake8 app"
+test = "pytest app"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
