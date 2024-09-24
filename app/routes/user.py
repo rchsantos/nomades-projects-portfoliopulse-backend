@@ -17,14 +17,18 @@ def get_user_service():
 
 router = APIRouter(prefix='/user', tags=['users'])
 
-# @router.get(
-#   '/',
-#   response_model=list[UserResponse],
-#   description='Get all users from the database',
-#   response_description='List of all users'
-# )
-# async def get_all_users():
-# return UserService().get_all_users()
+@router.get(
+  '/',
+  response_model=list[UserResponse],
+  status_code=status.HTTP_200_OK,
+  description='Get all users from the database',
+  response_description='List of all users'
+)
+async def get_all_users(user_service: UserService = Depends(get_user_service)):
+  try:
+    return user_service.get_all_users()
+  except ValueError as e:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 # Create a new user and return the new user
 @router.post(

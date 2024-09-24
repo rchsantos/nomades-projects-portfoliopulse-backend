@@ -13,21 +13,13 @@ class UserRepository:
     self.collection = db.collection(u'users')
     self.user_schema = user_schema
 
-  # def get_all_users(self) -> list[User]:
-  #   """
-  #   Get all users from the database
-  #   :return: list[User]
-  #   :rtype: list
-  #   :raises ValueError: If no users are found
-  #   :raises Exception: If an error occurs
-  #   """
-  #   try:
-  #     users = self.collection.get()
-  #     if users:
-  #       return [self.user_schema.to_user(user) for user in users]
-  #   except Exception as e:
-  #     raise ValueError(str(e))
-  #   raise ValueError('No users found')
+  def get_all_users(self) -> list[User]:
+    """
+    Get all users from the database
+    :return: list[User]
+    :rtype list
+    """
+    return [User(**user.to_dict()) for user in self.collection.get()]
 
   def add_user(self, user: User) -> None:
     """

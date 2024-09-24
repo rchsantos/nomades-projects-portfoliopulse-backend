@@ -10,7 +10,6 @@
     - get_user_by_username: Get a user by username
     - get_user_me: Get the current user
 """
-
 import uuid
 from passlib.context import CryptContext
 
@@ -39,15 +38,18 @@ class UserService:
   # TODO: Validate user data
   # TODO: check if user exists
 
-  def get_all_users(self) -> list[User]:
+  def get_all_users(self) -> list[UserResponse]:
     """
     Get all users from the database
-    :return: list[User]
+    :return: list[UserResponse]
     :rtype: list
     :raises ValueError: If no users are found
     :raises Exception: If an error occurs
     """
-    return self.repository.get_all_users()
+    users = self.repository.get_all_users()
+    if users:
+      return [UserResponse(**user.model_dump()) for user in users]
+    raise ValueError('No users found')
 
   def create_user(self, user_data: UserCreate) -> UserResponse:
     """
