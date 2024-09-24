@@ -17,14 +17,26 @@ from app.models.user import User
 from app.repository.user import UserRepository
 
 class UserService:
+  """
+    A class to represent a user service, and contains
+    all logic to interact with the repository.
+  """
+
   def __init__(self):
     self.repository = UserRepository()
 
   # TODO: Validate user data
   # TODO: check if user exists
 
-  def get_users(self):
-    pass
+  def get_all_users(self) -> list[User]:
+    """
+    Get all users from the database
+    :return: list[User]
+    :rtype: list
+    :raises ValueError: If no users are found
+    :raises Exception: If an error occurs
+    """
+    return self.repository.get_all_users()
 
   def create_user(self, user: User) -> User:
     # Data Validation

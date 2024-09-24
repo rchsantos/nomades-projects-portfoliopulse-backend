@@ -9,10 +9,17 @@ from app.services.user import UserService
 
 router = APIRouter(prefix='/user', tags=['users'])
 
-# Get all users and return a list of users
-@router.get('/')
-async def get_users():
-  pass
+@router.get(
+  '/',
+  response_model=list[UserResponse],
+  description='Get all users from the database',
+  response_description='List of all users'
+)
+async def get_all_users():
+  """
+  Get all users and return a list of users
+  """
+  return UserService().get_all_users()
 
 # Create a new user and return the new user
 @router.post(
@@ -20,7 +27,8 @@ async def get_users():
   response_model=UserResponse,
   status_code=status.HTTP_201_CREATED,
   description='Create a new user in the database',
-  response_description='User created successfully')
+  response_description='User created successfully'
+)
 async def create_user(user: User):
   user_model_dump = user.model_dump()
   try:
