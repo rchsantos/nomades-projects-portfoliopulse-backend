@@ -10,29 +10,35 @@ class UserRepository:
   """
 
   def __init__(self) -> None:
-    self.collection = db.collection(u"users")
+    self.collection = db.collection(u'users')
     self.user_schema = user_schema
 
-  def get_all_users(self) -> list[User]:
+  # def get_all_users(self) -> list[User]:
+  #   """
+  #   Get all users from the database
+  #   :return: list[User]
+  #   :rtype: list
+  #   :raises ValueError: If no users are found
+  #   :raises Exception: If an error occurs
+  #   """
+  #   try:
+  #     users = self.collection.get()
+  #     if users:
+  #       return [self.user_schema.to_user(user) for user in users]
+  #   except Exception as e:
+  #     raise ValueError(str(e))
+  #   raise ValueError('No users found')
+
+  def add_user(self, user: User) -> None:
     """
-    Get all users from the database
-    :return: list[User]
-    :rtype: list
-    :raises ValueError: If no users are found
-    :raises Exception: If an error occurs
+    Add a new user to the database
+    :param user:
+    :return: None
     """
     try:
-      users = self.collection.get()
-      if users:
-        return [self.user_schema.to_user(user) for user in users]
+      self.collection.add(self.user_to_firestore(user))
     except Exception as e:
-      raise ValueError(str(e))
-    raise ValueError('No users found')
-
-  def add_user(self, user: User) -> User:
-    _, user_ref = self.collection.add(self.user_schema.to_firebase_user(user))
-    user.id = user_ref.id
-    return user
+      raise ValueError (str(e))
 
   def get_user_by_email(self, email: str) -> bool:
     user = self.collection.where(
@@ -41,3 +47,15 @@ class UserRepository:
     if user:
       return True
     return False
+
+  # Transform a user object to a dictionary for storage in firestore
+  def user_to_firestore(self, user: User) -> dict:
+    return {
+      u'username': user.username,
+      u'email': user.email,
+      u'password': user.password,
+      u'salt': user.salt,
+      u'full_name': user.full_name,
+      u'role': user.role,
+      u'is_active': user.is_active
+    }

@@ -10,11 +10,13 @@
     - get_user_by_username: Get a user by username
     - get_user_me: Get the current user
 """
+
 import uuid
 from passlib.context import CryptContext
 
 from app.models.user import User
 from app.repository.user import UserRepository
+from app.schemas.user import UserCreate, UserResponse
 
 class UserService:
   """
@@ -22,8 +24,17 @@ class UserService:
     all logic to interact with the repository.
   """
 
-  def __init__(self):
-    self.repository = UserRepository()
+  def __init__(self, repository: UserRepository):
+    self.repository = repository
+    self.pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+
+  # Generate Salt
+  def generate_salt(self) -> str:
+    return uuid.uuid4().hex
+
+  # Hash Password
+  def hash_password(self, password: str, salt: str) -> str:
+    return self.pwd_context.hash(salt + password)
 
   # TODO: Validate user data
   # TODO: check if user exists
@@ -38,22 +49,47 @@ class UserService:
     """
     return self.repository.get_all_users()
 
-  def create_user(self, user: User) -> User:
-    # Data Validation
-    if not user.email or not user.password:
-      raise ValueError('Email and password are required')
-
+  def create_user(self, user_data: UserCreate) -> UserResponse:
+    """
+    Create a new user in the database
+    :param user_data:
+    :type user_data: UserCreate
+    :return: UserResponse
+    """
     # Check if user already exists
-    if self.repository.get_user_by_email(user.email):
+    if self.repository.get_user_by_email(user_data.email):
       raise ValueError('User already exists')
 
-    # Salt and hash password
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    salt = uuid.uuid4().hex
-    user.salt = salt
-    user.password = pwd_context.hash(user.salt + user.password)
+    # Generate Salt & Hash Password
+    salt = self.generate_salt()
+    hashed_password = self.hash_password(user_data.password, salt)
 
-    return self.repository.add_user(user)
+    # Create User Object
+    user = User(
+      username=user_data.username,
+      email=user_data.email,
+      password=hashed_password,
+      salt=salt,
+      full_name=user_data.full_name,
+      role=user_data.role,
+      is_active=user_data.is_active
+    )
+
+    # Add User to Repository
+    self.repository.add_user(user)
+
+    return UserResponse(**user.model_dump())
+
+  # def create_user(self, user: User) -> User:
+  #   # Data Validation
+  #   if not user.email or not user.password:
+  #     raise ValueError('Email and password are required')
+  #
+  #   # Check if user already exists
+  #   if self.repository.get_user_by_email(user.email):
+  #     raise ValueError('User already exists')
+  #
+  #   return self.repository.add_user(user)
 
   def update_user(self):
     pass

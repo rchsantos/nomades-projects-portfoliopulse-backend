@@ -1,25 +1,30 @@
 from fastapi import (
   APIRouter,
   status,
-  HTTPException
+  HTTPException,
+  Depends
 )
 
-from app.models.user import User, UserResponse
+from app.models.user import User
+from app.repository.user import UserRepository
 from app.services.user import UserService
+from app.schemas.user import UserCreate, UserResponse
+
+# Inject the dependency UserRepository into the UserService
+def get_user_service():
+  user_repository = UserRepository()
+  return UserService(repository=user_repository)
 
 router = APIRouter(prefix='/user', tags=['users'])
 
-@router.get(
-  '/',
-  response_model=list[UserResponse],
-  description='Get all users from the database',
-  response_description='List of all users'
-)
-async def get_all_users():
-  """
-  Get all users and return a list of users
-  """
-  return UserService().get_all_users()
+# @router.get(
+#   '/',
+#   response_model=list[UserResponse],
+#   description='Get all users from the database',
+#   response_description='List of all users'
+# )
+# async def get_all_users():
+# return UserService().get_all_users()
 
 # Create a new user and return the new user
 @router.post(
@@ -29,12 +34,12 @@ async def get_all_users():
   description='Create a new user in the database',
   response_description='User created successfully'
 )
-async def create_user(user: User):
-  user_model_dump = user.model_dump()
+async def create_user(user: UserCreate, user_service: UserService = Depends(get_user_service)):
   try:
-    return UserService().create_user(User(**user_model_dump))
-  except Exception as e:
+    return user_service.create_user(user)
+  except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 # Update a user
 @router.put('/{user_id}')

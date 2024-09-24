@@ -1,38 +1,39 @@
-from firebase_admin.firestore import DocumentSnapshot, DocumentReference
+import uuid
+from pydantic import BaseModel, EmailStr, Field, constr
+from typing import Optional
 
-from app.models.user import User
+# Schema base for User with common fields
+class UserBase(BaseModel):
+  username: str = Field(..., min_length=3, max_length=50)
+  email: EmailStr
+  full_name: Optional[str] = Field(None, min_length=3)
+  role: Optional[str] = Field(default='user')
+  is_active: Optional[bool] = Field(default=True)
 
-def to_user(user: dict | DocumentSnapshot) -> User:
-  user_dict = {}
-  if isinstance(user, DocumentReference):
-    user_dict.update({'id': user.id})
-    user = user.get().user_to_dict()
-  elif isinstance(user, DocumentSnapshot):
-    user_dict.update({'id': user.id})
-    user = user.user_to_dict()
+# Schema for User creation
+class UserCreate(UserBase):
+  password: constr(min_length=8)
 
-  user_dict.update(user)
-  return User(**user_dict)
+# Schema for the User response
+class UserResponse(UserBase):
+  id: uuid.UUID
 
-def user_to_dict(user: User) -> dict:
-    return {
-      'id': user.id,
-      'username': user.username,
-      'email': user.email,
-      'password': user.password,
-      'salt': user.salt,
-      'full_name': user.full_name,
-      'role': user.role,
-      'is_active': user.is_active,
-    }
+  class Config:
+    from_attributes = True
 
-def to_firebase_user(user: User) -> dict:
-    return {
-      u'username': user.username,
-      u'email': user.email,
-      u'password': user.password,
-      u'salt': user.salt,
-      u'full_name': user.full_name,
-      u'role': user.role,
-      u'is_active': user.is_active,
-    }
+# Schema for User update
+class UserUpdate(UserBase):
+  username: Optional[str] = Field(None, min_length=3, max_length=50)
+  email: Optional[EmailStr]
+  full_name: Optional[str] = Field(None, min_length=3)
+  role: Optional[str]
+  is_active: Optional[bool]
+  password: Optional[constr(min_length=8)]
+
+# Schema for the Auth response
+class UserAuthResponse(UserBase):
+  access_token: str
+  token_type: str
+
+  class Config:
+    from_attributes = True

@@ -1,20 +1,16 @@
+import uuid
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 class User(BaseModel):
-    id: Optional[str] = None
-    username: str
-    email: str
-    password: str
-    salt: Optional[str] = None
-    full_name: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = True
+  id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4)
+  username: str = Field(..., min_length=3, max_length=50)
+  email: EmailStr
+  password: str
+  salt: Optional[str]
+  full_name: Optional[str] = Field(None, min_length=3)
+  role: Optional[str] = Field(default='user')
+  is_active: Optional[bool] = Field(default=True)
 
-
-class UserResponse(BaseModel):
-    username: str
-    email: str
-    full_name: str
-    role: str
-    is_active: bool
+  class Config:
+    from_attributes = True
