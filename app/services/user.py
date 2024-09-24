@@ -29,7 +29,7 @@ class UserService:
 
   # Generate Salt
   def generate_salt(self) -> str:
-    return uuid.uuid4().hex
+    return str(uuid.uuid4())
 
   # Hash Password
   def hash_password(self, password: str, salt: str) -> str:
@@ -59,7 +59,7 @@ class UserService:
     :return: UserResponse
     """
     # Check if user already exists
-    if self.repository.get_user_by_email(user_data.email):
+    if self.repository.find_user_by_email(user_data.email):
       raise ValueError('User already exists')
 
     # Generate Salt & Hash Password
@@ -82,22 +82,42 @@ class UserService:
 
     return UserResponse(**user.model_dump())
 
-  # def create_user(self, user: User) -> User:
-  #   # Data Validation
-  #   if not user.email or not user.password:
-  #     raise ValueError('Email and password are required')
-  #
-  #   # Check if user already exists
-  #   if self.repository.get_user_by_email(user.email):
-  #     raise ValueError('User already exists')
-  #
-  #   return self.repository.add_user(user)
+  def update_user(self, user_id: uuid.UUID, user_data: dict) -> UserResponse:
+    """
+    Update a user in the database
+    :param user_id:
+    :param user_data:
+    :return:
+    """
+    user = self.repository.find_user_by_id(user_id)
+    if not user:
+      raise ValueError('User not found')
 
-  def update_user(self):
-    pass
+    # If password is provided, hash it
+    if 'password' in user_data:
+      salt = self.generate_salt()
+      hashed_password = self.hash_password(user_data['password'], salt)
+      user_data['salt'] = salt
+      user_data['password'] = hashed_password
 
-  def delete_user(self):
-    pass
+    # Update all field values in the user object
+    for key, value in user_data.items():
+      if key != 'password':
+        setattr(user, key, value)
+
+    # Update user in the repository
+    self.repository.update_user(user)
+
+    return UserResponse(**user.model_dump())
+
+  def delete_user(self, user_id: uuid.UUID) -> None:
+    # Check if user exists
+    user = self.repository.find_user_by_id(user_id)
+    if not user:
+      raise ValueError('User not found')
+
+    # Delete user from the repository
+    self.repository.delete_user(user_id)
 
   def get_user_by_id(self):
     pass

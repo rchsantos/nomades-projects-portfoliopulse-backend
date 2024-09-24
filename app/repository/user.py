@@ -1,3 +1,5 @@
+from typing import Optional
+from uuid import UUID
 from app.core.firestore_db import db
 
 from app.models.user import User
@@ -32,7 +34,36 @@ class UserRepository:
     except Exception as e:
       raise ValueError (str(e))
 
-  def get_user_by_email(self, email: str) -> bool:
+  def update_user(self, user: User) -> User:
+    """
+    Update a user in the database
+    :param user:
+    :return: User
+    """
+    try:
+      self.collection.document(str(user.id)).update(self.user_to_firestore(user))
+      return user
+    except Exception as e:
+      raise ValueError(str(e))
+
+  def delete_user(self, user_id: UUID) -> None:
+    """
+    Delete a user from the database
+    :param user_id:
+    :return: None
+    """
+    try:
+      self.collection.document(str(user_id)).delete()
+    except Exception as e:
+      raise ValueError(str(e))
+
+  def find_user_by_id(self, user_id: UUID) -> Optional[User]:
+    user = self.collection.document(str(user_id)).get()
+    if user.exists:
+      return User(**user.to_dict())
+    return None
+
+  def find_user_by_email(self, email: str) -> bool:
     user = self.collection.where(
       u'email', u'==', email
     ).get()
@@ -43,6 +74,7 @@ class UserRepository:
   # Transform a user object to a dictionary for storage in firestore
   def user_to_firestore(self, user: User) -> dict:
     return {
+      u'id': user.id,
       u'username': user.username,
       u'email': user.email,
       u'password': user.password,
