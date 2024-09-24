@@ -6,6 +6,7 @@ class User(BaseModel):
     username: str
     email: str
     password: str
+    salt: Optional[str] = None
     full_name: Optional[str] = None
     role: Optional[str] = None
     is_active: Optional[bool] = True

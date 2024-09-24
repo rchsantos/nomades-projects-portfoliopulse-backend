@@ -10,6 +10,8 @@
     - get_user_by_username: Get a user by username
     - get_user_me: Get the current user
 """
+import uuid
+from passlib.context import CryptContext
 
 from app.models.user import User
 from app.repository.user import UserRepository
@@ -18,8 +20,8 @@ class UserService:
   def __init__(self):
     self.repository = UserRepository()
 
-  # Validate user data
-  # check if user exists
+  # TODO: Validate user data
+  # TODO: check if user exists
 
   def get_users(self):
     pass
@@ -33,9 +35,11 @@ class UserService:
     if self.repository.get_user_by_email(user.email):
       raise ValueError('User already exists')
 
-    # TODO: Salt and hash password
-    # TODO: Insert user into the database
-    # Business Logic Validation
+    # Salt and hash password
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    salt = uuid.uuid4().hex
+    user.salt = salt
+    user.password = pwd_context.hash(user.salt + user.password)
 
     return self.repository.add_user(user)
 
