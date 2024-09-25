@@ -16,7 +16,7 @@ class UserCreate(UserBase):
 
 # Schema for the User response
 class UserResponse(UserBase):
-  id: uuid.UUID
+  id: Optional[str]
 
   class Config:
     from_attributes = True

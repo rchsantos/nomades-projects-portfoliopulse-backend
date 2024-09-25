@@ -66,13 +66,13 @@ class UserRepository:
       return User(**user.to_dict())
     return None
 
-  def find_user_by_email(self, email: str) -> bool:
+  def find_user_by_email(self, email: str) -> Optional[User] | None:
     user = self.collection.where(
       u'email', u'==', email
     ).get()
     if user:
-      return True
-    return False
+      return self.firestore_to_user(user[0])
+    return None
 
   # Transform a user object to a dictionary for storage in firestore
   @staticmethod
@@ -92,8 +92,9 @@ class UserRepository:
   @staticmethod
   def firestore_to_user(user_document: DocumentSnapshot) -> User:
     user_data = user_document.to_dict()
+    user_data['id'] = user_document.id
     return User(
-      id=UUID(user_data['id']),
+      id=(user_data['id']),
       username=user_data['username'],
       email=user_data['email'],
       password=user_data['password'],
@@ -102,4 +103,3 @@ class UserRepository:
       role=user_data['role'],
       is_active=user_data.get('is_active', True)
     )
-

@@ -16,7 +16,10 @@ def get_user_service():
   user_repository = UserRepository()
   return UserService(repository=user_repository)
 
-router = APIRouter(prefix='/user', tags=['users'])
+router = APIRouter(
+  prefix='/user',
+  tags=['users']
+)
 
 @router.get(
   '/',

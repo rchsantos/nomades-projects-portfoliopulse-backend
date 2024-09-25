@@ -19,6 +19,8 @@ python-multipart = "^0.0.10"
 bcrypt = "^4.2.0"
 passlib = "^1.7.4"
 email-validator = "^2.2.0"
+jose = "^1.0.0"
+python-jose = "^3.3.0"
 
 [tool.poetry.scripts]
 start-app = "uvicorn app.main:app --host 0.0.0.0 --port 5050 --reload"

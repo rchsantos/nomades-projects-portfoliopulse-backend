@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
 class User(BaseModel):
-  id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4)
+  id: Optional[str]
   username: str = Field(..., min_length=3, max_length=50)
   email: EmailStr
   password: str
@@ -12,5 +12,5 @@ class User(BaseModel):
   role: Optional[str] = Field(default='user')
   is_active: Optional[bool] = Field(default=True)
 
-  class Config:
+  class ConfigDict:
     from_attributes = True

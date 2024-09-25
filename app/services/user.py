@@ -28,7 +28,8 @@ class UserService:
     self.pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
   # Generate Salt
-  def generate_salt(self) -> str:
+  @staticmethod
+  def generate_salt() -> str:
     return str(uuid.uuid4())
 
   # Hash Password
@@ -68,6 +69,7 @@ class UserService:
 
     # Create User Object
     user = User(
+      user_id= str(uuid.uuid4()),
       username=user_data.username,
       email=user_data.email,
       password=hashed_password,
