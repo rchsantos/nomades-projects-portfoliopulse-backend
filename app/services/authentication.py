@@ -17,8 +17,6 @@ class Authentication:
       :rtype: Optional[User]
       """
     user = self.user_repository.find_user_by_email(email)
-
-    v = verify_password(password, user.salt, user.password)
     if not user or not verify_password(password, user.salt, user.password):
       return None
 

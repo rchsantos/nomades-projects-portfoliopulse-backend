@@ -5,6 +5,7 @@ from fastapi import (
   HTTPException,
   Depends
 )
+from sqlalchemy.testing import exclude
 
 from app.repository.user import UserRepository
 from app.services.user import UserService
@@ -50,7 +51,6 @@ async def create_user(
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-
 # Update a user
 @router.patch(
   '/{user_id}',
@@ -60,9 +60,11 @@ async def create_user(
   response_description='User updated successfully'
 )
 async def update_user(
-  user_id: UUID ,
+  user_id: str ,
   user_data: UserUpdate,
   user_service: UserService = Depends(get_user_service)):
+
+    user = user_service.update_user(user_id, user_data.model_dump(exclude_unset=True))
     try:
       return user_service.update_user(user_id, user_data.model_dump(exclude_unset=True))
     except ValueError as e:
@@ -71,7 +73,7 @@ async def update_user(
 # Delete a user
 @router.delete('/{user_id}')
 async def delete_user(
-  user_id: UUID,
+  user_id: str,
   user_service: UserService = Depends(get_user_service)
 ):
   try:

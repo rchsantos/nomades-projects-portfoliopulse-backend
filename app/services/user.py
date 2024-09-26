@@ -13,7 +13,7 @@
 import uuid
 from passlib.context import CryptContext
 
-from app.models.user import User
+from app.models.user import User, UserUpdate
 from app.repository.user import UserRepository
 from app.schemas.user import UserCreate, UserResponse
 
@@ -52,11 +52,11 @@ class UserService:
       return [UserResponse(**user.model_dump()) for user in users]
     raise ValueError('No users found')
 
-  def create_user(self, user_data: UserCreate) -> UserResponse:
+  def create_user(self, user_data: User) -> UserResponse:
     """
     Create a new user in the database
     :param user_data:
-    :type user_data: UserCreate
+    :type user_data: User
     :return: UserResponse
     """
     # Check if user already exists
@@ -69,7 +69,6 @@ class UserService:
 
     # Create User Object
     user = User(
-      user_id= str(uuid.uuid4()),
       username=user_data.username,
       email=user_data.email,
       password=hashed_password,
@@ -84,14 +83,15 @@ class UserService:
 
     return UserResponse(**user.model_dump())
 
-  def update_user(self, user_id: uuid.UUID, user_data: dict) -> UserResponse:
+  def update_user(self, user_id: str, user_data: dict) -> UserResponse:
     """
     Update a user in the database
-    :param user_id:
-    :param user_data:
-    :return:
+    :param user_id: str
+    :param user_data: dict
+    :return: UserResponse
+    :raises ValueError: If user not found
     """
-    user = self.repository.find_user_by_id(user_id)
+    user: UserUpdate = self.repository.find_user_by_id(user_id)
     if not user:
       raise ValueError('User not found')
 
@@ -108,11 +108,11 @@ class UserService:
         setattr(user, key, value)
 
     # Update user in the repository
-    self.repository.update_user(user)
+    self.repository.update_user(user_id, user)
 
     return UserResponse(**user.model_dump())
 
-  def delete_user(self, user_id: uuid.UUID) -> None:
+  def delete_user(self, user_id: str) -> None:
     # Check if user exists
     user = self.repository.find_user_by_id(user_id)
     if not user:
@@ -120,15 +120,6 @@ class UserService:
 
     # Delete user from the repository
     self.repository.delete_user(user_id)
-
-  def get_user_by_id(self):
-    pass
-
-  def get_user_by_email(self):
-    pass
-
-  def get_user_by_username(self):
-    pass
 
   def get_user_me(self):
     pass
