@@ -12,16 +12,9 @@ class LoginResponse(BaseModel):
   access_token: str
   token_type: str
 
-# Schema for registration request payload
-class RegisterRequest(BaseModel):
-  username: constr(min_length=3, max_length=50)
-  email: EmailStr
-  password: constr(min_length=8)
-  full_name: Optional[constr(min_length=3)]
-
 # Schema for registration response payload
 class RegisterResponse(BaseModel):
-  id: uuid.UUID
+  id: str
   username: str
   email: str
   full_name: Optional[str]

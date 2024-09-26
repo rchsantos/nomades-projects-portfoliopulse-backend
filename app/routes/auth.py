@@ -6,16 +6,23 @@ from fastapi import (
 )
 
 from app.core.security import create_access_token
+from app.models.auth import TokenResponse
 from app.repository.user import UserRepository
 from app.routes.user import create_user
 from app.schemas.auth import RegisterResponse, LoginResponse, LoginRequest
+from app.schemas.user import UserCreate
 from app.services.authentication import Authentication
+from app.services.user import UserService
 
 router = APIRouter()
 
 # Inject the dependency user repository
 def get_user_repository():
   return UserRepository()
+
+# Inject the dependency user service
+def get_user_service(user_repo: UserRepository = Depends(get_user_repository)):
+  return UserService(user_repo)
 
 def get_authentication_service(user_repo: UserRepository = Depends(get_user_repository)):
   return Authentication(user_repo)
@@ -28,10 +35,10 @@ def get_authentication_service(user_repo: UserRepository = Depends(get_user_repo
   response_description='User registered successfully'
 )
 async def register_user(
-  user: RegisterResponse,
-  user_repo: UserRepository = Depends(get_user_repository)
+  user: UserCreate,
+  user_service: UserService = Depends(get_user_service),
 ):
-  return await create_user(user, user_repo)
+  return await create_user(user, user_service)
 
 @router.post(
   '/login',
@@ -58,3 +65,4 @@ async def login(
     'token_type': 'bearer'
   }
 
+# TODO: Create a refresh token endpoint

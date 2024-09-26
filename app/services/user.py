@@ -52,7 +52,7 @@ class UserService:
       return [UserResponse(**user.model_dump()) for user in users]
     raise ValueError('No users found')
 
-  def create_user(self, user_data: User) -> UserResponse:
+  def create_user(self, user_data: UserCreate) -> UserResponse:
     """
     Create a new user in the database
     :param user_data:

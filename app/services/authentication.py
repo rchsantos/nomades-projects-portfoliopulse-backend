@@ -21,4 +21,3 @@ class Authentication:
       return None
 
     return user
-
