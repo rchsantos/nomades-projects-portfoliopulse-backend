@@ -16,13 +16,14 @@ class UserCreate(UserBase):
 
 # Schema for the User response
 class UserResponse(UserBase):
-  id: uuid.UUID
+  id: Optional[str]
 
   class Config:
     from_attributes = True
 
 # Schema for User update
 class UserUpdate(UserBase):
+  id: Optional[str]
   username: Optional[str] = Field(None, min_length=3, max_length=50)
   email: Optional[EmailStr]
   full_name: Optional[str] = Field(None, min_length=3)

@@ -1,11 +1,11 @@
 from typing import Optional
 from uuid import UUID
 
-from google.cloud.firestore_v1 import DocumentSnapshot
+from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
 
 from app.core.firestore_db import db
 
-from app.models.user import User
+from app.models.user import User, UserUpdate
 import app.schemas.user as user_schema
 
 class UserRepository:
@@ -26,57 +26,64 @@ class UserRepository:
     """
     return [User(**user.to_dict()) for user in self.collection.get()]
 
-  def add_user(self, user: User) -> None:
+  def add_user(self, user: User) -> User:
     """
     Add a new user to the database
     :param user:
     :return: None
     """
     try:
-      self.collection.add(self.user_to_firestore(user))
+      _, user_ref = self.collection.add(self.user_to_firestore(user))
+      user.id = user_ref.id
+      return user
     except Exception as e:
       raise ValueError (str(e))
 
-  def update_user(self, user: User) -> User:
+  def update_user(
+    self,
+    user_id: str,
+    user: UserUpdate) -> UserUpdate:
     """
     Update a user in the database
+    :param user_id:
     :param user:
     :return: User
     """
     try:
-      self.collection.document(str(user.id)).update(self.user_to_firestore(user))
+      self.collection.document(user_id).update(self.user_to_firestore(user))
       return user
     except Exception as e:
       raise ValueError(str(e))
 
-  def delete_user(self, user_id: UUID) -> None:
+  def delete_user(self, user_id: str) -> None:
     """
     Delete a user from the database
-    :param user_id:
+    :param user_id: str
     :return: None
+    :raises ValueError: If an error occurs
     """
     try:
-      self.collection.document(str(user_id)).delete()
+      self.collection.document(user_id).delete()
     except Exception as e:
       raise ValueError(str(e))
 
-  def find_user_by_id(self, user_id: UUID) -> Optional[User]:
-    user = self.collection.document(str(user_id)).get()
+  def find_user_by_id(self, user_id: str) -> Optional[User]:
+    user = self.collection.document(user_id).get()
     if user.exists:
       return User(**user.to_dict())
     return None
 
-  def find_user_by_email(self, email: str) -> bool:
+  def find_user_by_email(self, email: str) -> Optional[User] | None:
     user = self.collection.where(
-      u'email', u'==', email
+      filter=FieldFilter(u'email', u'==', email)
     ).get()
     if user:
-      return True
-    return False
+      return self.firestore_to_user(user[0])
+    return None
 
   # Transform a user object to a dictionary for storage in firestore
   @staticmethod
-  def user_to_firestore(user: User) -> dict:
+  def user_to_firestore(user: User|UserUpdate ) -> dict:
     return {
       u'id': user.id,
       u'username': user.username,
@@ -92,8 +99,9 @@ class UserRepository:
   @staticmethod
   def firestore_to_user(user_document: DocumentSnapshot) -> User:
     user_data = user_document.to_dict()
+    user_data['id'] = user_document.id
     return User(
-      id=UUID(user_data['id']),
+      id=(user_data['id']),
       username=user_data['username'],
       email=user_data['email'],
       password=user_data['password'],
@@ -102,4 +110,3 @@ class UserRepository:
       role=user_data['role'],
       is_active=user_data.get('is_active', True)
     )
-
