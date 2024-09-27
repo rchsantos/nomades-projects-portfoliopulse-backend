@@ -1,4 +1,4 @@
-from uuid import UUID
+import logging
 from fastapi import (
   APIRouter,
   status,
@@ -49,6 +49,7 @@ async def create_user(
   try:
     return user_service.create_user(user)
   except ValueError as e:
+    logging.error(f"Error creating user: {e}")
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 # Update a user
