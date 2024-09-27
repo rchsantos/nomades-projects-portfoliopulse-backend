@@ -113,6 +113,12 @@ class UserService:
     return UserResponse(**user.model_dump())
 
   def delete_user(self, user_id: str) -> None:
+    """
+    Delete a user from the database
+    :param user_id: str
+    :return: None
+    :raises ValueError: If user not found
+    """
     # Check if user exists
     user = self.repository.find_user_by_id(user_id)
     if not user:
@@ -120,6 +126,18 @@ class UserService:
 
     # Delete user from the repository
     self.repository.delete_user(user_id)
+
+  def get_user_by_email(self, email: str) -> UserResponse:
+    """
+    Get a user by email
+    :param email: str
+    :return: UserResponse
+    :raises ValueError: If user not found
+    """
+    user = self.repository.find_user_by_email(email)
+    if user:
+      return UserResponse(**user.model_dump())
+    raise ValueError('User not found')
 
   def get_user_me(self):
     pass

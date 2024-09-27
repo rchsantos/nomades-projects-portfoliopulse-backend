@@ -6,7 +6,6 @@ from fastapi import (
 )
 
 from app.core.security import create_access_token
-from app.models.auth import TokenResponse
 from app.repository.user import UserRepository
 from app.routes.user import create_user
 from app.schemas.auth import RegisterResponse, LoginResponse, LoginRequest
@@ -65,4 +64,4 @@ async def login(
     'token_type': 'bearer'
   }
 
-# TODO: Create a refresh token endpoint
+# TODO: Create a Forgot Password endpoint

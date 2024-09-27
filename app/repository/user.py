@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 
 from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
 

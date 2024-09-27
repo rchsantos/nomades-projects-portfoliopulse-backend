@@ -65,6 +65,7 @@ def create_access_token(
   :param expires_delta: Optional[int]
   :rtype: str
   """
+  token_expire = ACCESS_TOKEN_EXPIRE_MINUTES
   to_encode = data.copy()
   expires = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
   to_encode.update({'exp': expires})
@@ -78,6 +79,14 @@ def create_refresh_token(data: dict) -> str:
   :rtype: str
   """
   return create_access_token(data, expires_delta = REFRESH_TOKEN_EXPIRE_DAYS)
+
+# def create_reset_password_token(data: dict) -> str:
+#   """
+#   Create reset password token
+#   :param data: dict
+#   :rtype: str
+#   """
+#   return create_access_token(data, expires_delta = REFRESH_TOKEN_EXPIRE_DAYS)
 
 def get_current_user(
   token: str  = Depends(oauth2_scheme),
