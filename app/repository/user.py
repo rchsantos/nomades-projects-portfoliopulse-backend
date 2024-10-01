@@ -98,14 +98,13 @@ class UserRepository:
   @staticmethod
   def firestore_to_user(user_document: DocumentSnapshot) -> User:
     user_data = user_document.to_dict()
-    user_data['id'] = user_document.id
     return User(
-      id=(user_data['id']),
-      username=user_data['username'],
-      email=user_data['email'],
-      password=user_data['password'],
-      salt=user_data['salt'],
-      full_name=user_data['full_name'],
-      role=user_data['role'],
-      is_active=user_data.get('is_active', True)
+      id = user_document.id,
+      username = user_data['username'],
+      email = user_data['email'],
+      password = user_data['password'],
+      salt = user_data['salt'],
+      full_name = user_data['full_name'],
+      role = user_data['role'],
+      is_active = user_data.get('is_active', True)
     )

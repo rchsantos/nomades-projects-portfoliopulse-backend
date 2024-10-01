@@ -21,7 +21,6 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.models.user import User
-from app.repository.user import UserRepository
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
@@ -31,29 +30,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
-# Method's to authenticate user
 def verify_password(plain_password: str, salt: str, hashed_password: str) -> bool:
     return pwd_context.verify(salt + plain_password, hashed_password)
 
 def get_password_hash(password: str):
     return pwd_context.hash(password)
-
-# def authenticate_user(
-#   email: str,
-#   password: str,
-#   user_repo: UserRepository
-# ) -> Optional[User]:
-#   """
-#   Authenticate user
-#   :param email: str
-#   :param password: str
-#   :param user_repo: UserRepository
-#   :return: Optional[User]
-#   """
-#   user = user_repo.find_user_by_email(email)
-#   if not user or not verify_password(password, user.hashed_password):
-#     return None
-#   return user
 
 def create_access_token(
   data: dict,
@@ -65,7 +46,6 @@ def create_access_token(
   :param expires_delta: Optional[int]
   :rtype: str
   """
-  token_expire = ACCESS_TOKEN_EXPIRE_MINUTES
   to_encode = data.copy()
   expires = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
   to_encode.update({'exp': expires})
@@ -80,39 +60,39 @@ def create_refresh_token(data: dict) -> str:
   """
   return create_access_token(data, expires_delta = REFRESH_TOKEN_EXPIRE_DAYS)
 
-# def create_reset_password_token(data: dict) -> str:
-#   """
-#   Create reset password token
-#   :param data: dict
-#   :rtype: str
-#   """
-#   return create_access_token(data, expires_delta = REFRESH_TOKEN_EXPIRE_DAYS)
-
-def get_current_user(
-  token: str  = Depends(oauth2_scheme),
-  user_repo: UserRepository = Depends()
-) -> User:
+def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
   """
-  Get the current user from the token
+  Get current user id from token, if token is valid return user id
   :param token: str
-  :param user_repo: UserRepository
-  :return: User
+  :return: str
   """
-  credentials_exception = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail='Could not validate credentials',
-    headers={'WWW-Authenticate': 'Bearer'}
-  )
   try:
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     user_id: str = payload.get('sub')
     if user_id is None:
-      raise credentials_exception
-  except JWTError:
-    raise credentials_exception
+      raise HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail='Could not validate credentials',
+    headers={'WWW-Authenticate': 'Bearer'},
+  )
+  except JWTError as e:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail=f'Could not validate credentials: {str(e)}',
+      headers={'WWW-Authenticate': 'Bearer'},
+    )
 
-  user = user_repo.find_user_by_id(UUID(user_id))
-  if user is None:
-    raise credentials_exception
+  return user_id
 
-  return user
+# Method's to check if user has roles
+def check_user_roles(user: User, roles: list) -> bool:
+  """
+  Check if user has roles
+  :param user: User
+  :param roles: List
+  :return: bool
+  """
+  pass
+
+
+
