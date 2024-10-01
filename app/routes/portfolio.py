@@ -84,13 +84,13 @@ async def update_portfolio(
   description='Delete a portfolio from the database',
   response_description='Portfolio deleted successfully'
 )
-def delete_portfolio(
+async def delete_portfolio(
   portfolio_id: str,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
   current_user_id: str = Depends(get_current_user_id)
 ):
   try:
-    portfolio_service.delete_portfolio(portfolio_id, current_user_id)
+    await portfolio_service.delete_portfolio(portfolio_id, current_user_id)
   except ValueError as e:
     logging.error(f'Error deleting portfolio: {e}')
     raise HTTPException(status_code=400, detail=str(e))

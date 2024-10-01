@@ -1,17 +1,11 @@
-"""
-This module contains the service class for the portfolio entity.
-The service class will have the following methods:
-- get_all_portfolio: Get all portfolios
-- create_portfolio: Create a new portfolio
-- update_portfolio: Update a portfolio
-- delete_portfolio: Delete a portfolio
-- get_portfolio: Get a portfolio by id
-"""
 from app.models.portfolio import Portfolio
 from app.repository.portfolio import PortfolioRepository
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 
 class PortfolioService:
+  """
+  Portfolio service class to handle business logic for portfolios in the database
+  """
 
   def __init__(self, repository: PortfolioRepository):
     self.repository = repository
