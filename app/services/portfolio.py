@@ -1,7 +1,7 @@
 from fastapi.params import Depends
 
 from app.models.portfolio import Portfolio
-from app.repository.portfolio import PortfolioRepository, get_portfolio_repository
+from app.repository.portfolio import PortfolioRepository
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 
 class PortfolioService:
@@ -14,7 +14,7 @@ class PortfolioService:
   async def get_all_portfolio(self, current_user_id: str) -> list[PortfolioResponse]:
     """
     Get all portfolios from the database
-    :param current_user_id: str
+    # :param current_user_id: str
     :return: list[PortfolioResponse]
     """
     portfolios = await self.repository.get_all_portfolios(current_user_id)
@@ -56,7 +56,7 @@ class PortfolioService:
     :param user_id: str
     :return: PortfolioResponse
     """
-    portfolio = self.repository.get_portfolio_by_id(portfolio_id)
+    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
     if not portfolio:
       raise ValueError('Portfolio not found...')
 
@@ -73,7 +73,7 @@ class PortfolioService:
     :param user_id: str
     :return: None
     """
-    portfolio = self.repository.get_portfolio_by_id(portfolio_id)
+    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
     if not portfolio:
       raise ValueError('Portfolio not found...')
 
@@ -97,7 +97,4 @@ class PortfolioService:
       raise ValueError('You do not have permission to view this portfolio...')
 
     return PortfolioResponse(**portfolio.model_dump())
-
-def get_portfolio_service(repository: PortfolioRepository = Depends(get_portfolio_repository)):
-  return PortfolioService(repository)
 

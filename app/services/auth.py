@@ -3,9 +3,8 @@ from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app.models.auth import TokenResponse
-from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterResponse
-from app.schemas.user import UserCreate, UserResponse, UserResponseVerify
+from app.schemas.user import UserCreate, UserResponseVerify
 from app.services.user import UserService
 from app.utils.jwt import AuthHandler, ACCESS_TOKEN_EXPIRE_MINUTES
 

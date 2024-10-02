@@ -5,7 +5,6 @@ from fastapi import (
   HTTPException,
   Depends
 )
-from sqlalchemy.sql.functions import current_user
 
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate

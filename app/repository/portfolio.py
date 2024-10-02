@@ -10,7 +10,6 @@ class PortfolioRepository:
     A class to represent a portfolio repository, and contains
     methods to interact with the database.
   """
-
   def __init__(self) -> None:
     self.collection = db.collection(u'portfolios')
     self.portfolio_schema = portfolio_schema
@@ -108,6 +107,3 @@ class PortfolioRepository:
       user_id = portfolio_data['user_id'],
       strategy = portfolio_data['strategy']
     )
-
-def get_portfolio_repository(self):
-  return self.collection
