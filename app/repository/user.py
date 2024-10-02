@@ -12,24 +12,23 @@ class UserRepository:
     A class to represent a user repository, and contains
     methods to interact with the database.
   """
-
   def __init__(self) -> None:
     self.collection = db.collection(u'users')
     self.user_schema = user_schema
 
-  def get_all_users(self) -> list[User]:
+  async def get_all_users(self) -> list[User]:
     """
     Get all users from the database
-    :return: list[User]
-    :rtype list
+    :rtype list[User]
     """
-    return [User(**user.to_dict()) for user in self.collection.get()]
+    return [User(**user.to_dict()) for user in await self.collection.get()]
 
-  def add_user(self, user: User) -> User:
+  async def add_user(self, user: User) -> User:
     """
     Add a new user to the database
-    :param user:
-    :return: None
+    :param user: User
+    :rtype: User
+    :raises ValueError: If an error occurs
     """
     try:
       _, user_ref = self.collection.add(self.user_to_firestore(user))
@@ -38,43 +37,59 @@ class UserRepository:
     except Exception as e:
       raise ValueError (str(e))
 
-  def update_user(
+  async def update_user(
     self,
     user_id: str,
     user: UserUpdate) -> UserUpdate:
     """
     Update a user in the database
-    :param user_id:
-    :param user:
-    :return: User
+    :param user_id: str
+    :param user: UserUpdate
+    :rtype: UserUpdate
     """
     try:
-      self.collection.document(user_id).update(self.user_to_firestore(user))
+      await self.collection.document(user_id).update(self.user_to_firestore(user))
       return user
     except Exception as e:
       raise ValueError(str(e))
 
-  def delete_user(self, user_id: str) -> None:
+  async def delete_user(self, user_id: str) -> None:
     """
     Delete a user from the database
     :param user_id: str
-    :return: None
+    :rtype: None
     :raises ValueError: If an error occurs
     """
     try:
-      self.collection.document(user_id).delete()
+      await self.collection.document(user_id).delete()
     except Exception as e:
       raise ValueError(str(e))
 
-  def find_user_by_id(self, user_id: str) -> Optional[User]:
-    user = self.collection.document(user_id).get()
+  async def find_user_by_id(self, user_id: str) -> Optional[User]:
+    user = await self.collection.document(user_id).get()
     if user.exists:
       return User(**user.to_dict())
     return None
 
-  def find_user_by_email(self, email: str) -> Optional[User] | None:
+  def find_user_by_email(self, email: str) -> Optional[User]:
     user = self.collection.where(
-      filter=FieldFilter(u'email', u'==', email)
+      u'email', u'==', email
+    ).get()
+    if user:
+      return self.firestore_to_user(user[0])
+    return None
+
+  # def find_user_by_email(self, email: str) -> Optional[User] | None:
+  #   user = self.collection.where(
+  #     filter=FieldFilter(u'email', u'==', email)
+  #   ).get()
+  #   if user:
+  #     return self.firestore_to_user(user[0])
+  #   return None
+
+  def find_user_by_username(self, username: str) -> Optional[User] | None:
+    user = self.collection.where(
+      filter=FieldFilter(u'username', u'==', username)
     ).get()
     if user:
       return self.firestore_to_user(user[0])

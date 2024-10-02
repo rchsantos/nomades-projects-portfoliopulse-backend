@@ -108,3 +108,6 @@ class PortfolioRepository:
       user_id = portfolio_data['user_id'],
       strategy = portfolio_data['strategy']
     )
+
+def get_portfolio_repository(self):
+  return self.collection

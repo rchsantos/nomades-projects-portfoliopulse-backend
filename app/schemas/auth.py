@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, Field, constr
 
 # Schema for login request payload
 class LoginRequest(BaseModel):
-  email: EmailStr
+  username: str
   password: str
 
 # Schema for login response payload

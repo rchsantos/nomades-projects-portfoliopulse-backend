@@ -11,7 +11,6 @@ from app.repository.user import UserRepository
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
-
 # Inject the dependency UserRepository into the UserService
 def get_user_service():
   user_repository = UserRepository()
@@ -31,7 +30,7 @@ router = APIRouter(
 )
 async def get_all_users(user_service: UserService = Depends(get_user_service)):
   try:
-    return user_service.get_all_users()
+    return await user_service.get_all_users()
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -47,9 +46,9 @@ async def create_user(
   user: UserCreate,
   user_service: UserService = Depends(get_user_service)):
   try:
-    return user_service.create_user(user)
+    return await user_service.create_user(user)
   except ValueError as e:
-    logging.error(f"Error creating user: {e}")
+    logging.error(f'Error creating user: {e}')
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 # Update a user

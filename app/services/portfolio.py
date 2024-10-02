@@ -1,12 +1,13 @@
+from fastapi.params import Depends
+
 from app.models.portfolio import Portfolio
-from app.repository.portfolio import PortfolioRepository
+from app.repository.portfolio import PortfolioRepository, get_portfolio_repository
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 
 class PortfolioService:
   """
   Portfolio service class to handle business logic for portfolios in the database
   """
-
   def __init__(self, repository: PortfolioRepository):
     self.repository = repository
 
@@ -96,3 +97,7 @@ class PortfolioService:
       raise ValueError('You do not have permission to view this portfolio...')
 
     return PortfolioResponse(**portfolio.model_dump())
+
+def get_portfolio_service(repository: PortfolioRepository = Depends(get_portfolio_repository)):
+  return PortfolioService(repository)
+
