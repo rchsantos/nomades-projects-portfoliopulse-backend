@@ -29,6 +29,7 @@ def get_auth_service(
 ):
   return AuthService(user_service, auth_handler)
 
+
 @router.post(
     '/register',
     response_model=RegisterResponse,
@@ -55,6 +56,7 @@ async def login(
     auth_service: AuthService = Depends(get_auth_service)
 ):
     return await auth_service.login(login_request)
+
 
 @router.post(
     '/logout',

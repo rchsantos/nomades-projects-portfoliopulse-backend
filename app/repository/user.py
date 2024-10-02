@@ -16,12 +16,12 @@ class UserRepository:
     self.collection = db.collection(u'users')
     self.user_schema = user_schema
 
-  async def get_all_users(self) -> list[User]:
+  def get_all_users(self) -> list[User]:
     """
     Get all users from the database
     :rtype list[User]
     """
-    return [User(**user.to_dict()) for user in await self.collection.get()]
+    return [User(**user.to_dict()) for user in self.collection.get()]
 
   async def add_user(self, user: User) -> User:
     """
@@ -48,12 +48,12 @@ class UserRepository:
     :rtype: UserUpdate
     """
     try:
-      await self.collection.document(user_id).update(self.user_to_firestore(user))
+      self.collection.document(user_id).update(self.user_to_firestore(user))
       return user
     except Exception as e:
       raise ValueError(str(e))
 
-  async def delete_user(self, user_id: str) -> None:
+  def delete_user(self, user_id: str) -> None:
     """
     Delete a user from the database
     :param user_id: str
@@ -61,12 +61,12 @@ class UserRepository:
     :raises ValueError: If an error occurs
     """
     try:
-      await self.collection.document(user_id).delete()
+      self.collection.document(user_id).delete()
     except Exception as e:
       raise ValueError(str(e))
 
-  async def find_user_by_id(self, user_id: str) -> Optional[User]:
-    user = await self.collection.document(user_id).get()
+  def find_user_by_id(self, user_id: str) -> Optional[User]:
+    user = self.collection.document(user_id).get()
     if user.exists:
       return User(**user.to_dict())
     return None

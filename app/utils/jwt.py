@@ -1,16 +1,12 @@
-from fastapi import HTTPException, status
-from fastapi.params import Depends
+from fastapi import HTTPException, status, Security, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastapi import Security
 
 from app.core.config import settings
 from app.models.user import blacklist_tokens
-from app.routes.user import get_user_service
-# from app.repository.user import UserRepository
 from app.schemas.user import UserResponse, UserResponseVerify
 from app.services.user import UserService
 
@@ -18,9 +14,6 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-# def get_user_service():
-#   user_repository = UserRepository()
-#   return UserService(repository=user_repository)
 
 class AuthHandler:
   """
@@ -57,14 +50,14 @@ class AuthHandler:
     return encoded_jwt
 
 
-  async def get_user(self, username: str) -> UserResponse | UserResponseVerify:
+  async def get_user(self, username: str) -> UserResponse:
     """
     Get user by username
     :param username:
     :rtype: UserResponse
     :raises HTTPException: If user not found
     """
-    user: UserResponse|UserResponseVerify = await self.user_service.get_user_by_username(username)
+    user: UserResponse = await self.user_service.get_user_by_username(username)
     if not user:
       raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found...')
     return user
@@ -100,7 +93,6 @@ class AuthHandler:
     :param token: str
     :rtype: bool
     """
-    blacklist_tokens = set()
     blacklist_tokens.add(token)
 
   async def is_token_blacklisted(self, token: str) -> bool:

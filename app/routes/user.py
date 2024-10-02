@@ -5,16 +5,13 @@ from fastapi import (
   HTTPException,
   Depends
 )
-from sqlalchemy.testing import exclude
+from sqlalchemy.sql.functions import current_user
 
-from app.repository.user import UserRepository
 from app.services.user import UserService
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
+from app.dependencies import get_user_service, get_current_user
 
-# Inject the dependency UserRepository into the UserService
-def get_user_service():
-  user_repository = UserRepository()
-  return UserService(repository=user_repository)
+
 
 router = APIRouter(
   prefix='/user',
@@ -28,7 +25,10 @@ router = APIRouter(
   description='Get all users from the database',
   response_description='List of all users'
 )
-async def get_all_users(user_service: UserService = Depends(get_user_service)):
+async def get_all_users(
+  user_service: UserService = Depends(get_user_service),
+  current_user: UserResponse = Depends(get_current_user)
+):
   try:
     return await user_service.get_all_users()
   except ValueError as e:
@@ -57,27 +57,33 @@ async def create_user(
   response_model=UserResponse,
   status_code=status.HTTP_200_OK,
   description='Update a user in the database',
-  response_description='User updated successfully'
+  response_description='User updated successfully',
 )
 async def update_user(
   user_id: str ,
   user_data: UserUpdate,
-  user_service: UserService = Depends(get_user_service)):
-
-    user = user_service.update_user(user_id, user_data.model_dump(exclude_unset=True))
-    try:
-      return user_service.update_user(user_id, user_data.model_dump(exclude_unset=True))
-    except ValueError as e:
-      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-# Delete a user
-@router.delete('/{user_id}')
-async def delete_user(
-  user_id: str,
-  user_service: UserService = Depends(get_user_service)
+  user_service: UserService = Depends(get_user_service),
+  current_user: UserResponse = Depends(get_current_user)
 ):
   try:
-    user_service.delete_user(user_id)
+    return await user_service.update_user(user_id, user_data.model_dump(exclude_unset=True))
+  except ValueError as e:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+# Delete a user
+@router.delete(
+  '/{user_id}',
+  status_code=status.HTTP_200_OK,
+  description='Delete a user from the database',
+  response_description='User deleted successfully'
+)
+async def delete_user(
+  user_id: str,
+  user_service: UserService = Depends(get_user_service),
+  current_user: UserResponse = Depends(get_current_user)
+):
+  try:
+    await user_service.delete_user(user_id)
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
   return {"message": 'User deleted successfully'}

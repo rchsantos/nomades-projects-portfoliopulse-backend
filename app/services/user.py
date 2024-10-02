@@ -44,7 +44,7 @@ class UserService:
     :raises ValueError: If no users are found
     :raises Exception: If an error occurs
     """
-    users = await self.repository.get_all_users()
+    users: User = self.repository.get_all_users()
     if users:
       return [UserResponse(**user.model_dump()) for user in users]
     raise ValueError('No users found')
@@ -87,7 +87,7 @@ class UserService:
     :return: UserResponse
     :raises ValueError: If user not found
     """
-    user: UserUpdate = await self.repository.find_user_by_id(user_id)
+    user: UserUpdate = self.repository.find_user_by_id(user_id)
     if not user:
       raise ValueError('User not found')
 
@@ -116,12 +116,12 @@ class UserService:
     :raises ValueError: If user not found
     """
     # Check if user exists
-    user: User = await self.repository.find_user_by_id(user_id)
+    user: User = self.repository.find_user_by_id(user_id)
     if not user:
       raise ValueError('User not found')
 
     # Delete user from the repository
-    await self.repository.delete_user(user_id)
+    self.repository.delete_user(user_id)
 
   async def get_user_by_email(self, email: str) -> UserResponse:
     """

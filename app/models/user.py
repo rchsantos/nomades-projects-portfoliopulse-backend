@@ -27,4 +27,4 @@ class UserUpdate(BaseModel):
     from_attributes = True
 
 
-blacklist_tokens = []
+blacklist_tokens = set()
