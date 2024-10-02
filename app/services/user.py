@@ -9,6 +9,7 @@
     - get_user_by_email: Get a user by email
     - get_user_by_username: Get a user by username
     - get_user_me: Get the current user
+    TODO: Implement the user can manage their own account
 """
 import uuid
 from passlib.context import CryptContext
