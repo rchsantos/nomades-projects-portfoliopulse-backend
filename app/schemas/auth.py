@@ -1,10 +1,10 @@
 import uuid
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, constr
+from pydantic import BaseModel
 
 # Schema for login request payload
 class LoginRequest(BaseModel):
-  email: EmailStr
+  username: str
   password: str
 
 # Schema for login response payload

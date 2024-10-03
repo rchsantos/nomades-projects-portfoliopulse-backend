@@ -5,15 +5,11 @@ from fastapi import (
   Depends
 )
 
-from app.core.security import get_current_user_id
-from app.repository.portfolio import PortfolioRepository
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
+from app.schemas.user import UserResponse
 from app.services.portfolio import PortfolioService
+from app.dependencies import get_portfolio_service, get_current_user
 
-# Inject the dependency PortfolioRepository into the PortfolioService
-def get_portfolio_service():
-  portfolio_repository = PortfolioRepository()
-  return PortfolioService(repository=portfolio_repository)
 
 router = APIRouter(
   prefix='/portfolio',
@@ -29,10 +25,11 @@ router = APIRouter(
 )
 async def get_all_portfolio(
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
-  current_user_id: str = Depends(get_current_user_id)
+  current_user: UserResponse = Depends(get_current_user),
 ):
+  user = await current_user
   try:
-    return await portfolio_service.get_all_portfolio(current_user_id)
+    return await portfolio_service.get_all_portfolio(user.id)
   except ValueError as e:
     logging.error(f"Error getting all portfolios: {e}")
     raise HTTPException(status_code=404, detail=str(e))
@@ -47,10 +44,11 @@ async def get_all_portfolio(
 async def create_portfolio(
   portfolio: PortfolioBase,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
-  current_user_id: str = Depends(get_current_user_id)
+  current_user: UserResponse = Depends(get_current_user),
 ):
   try:
-    return await portfolio_service.create_portfolio(portfolio, current_user_id)
+    user = await current_user
+    return await portfolio_service.create_portfolio(portfolio, user.id)
   except ValueError as e:
     logging.error(f'Error creating portfolio: {e}')
     raise HTTPException(status_code=400, detail=str(e))
@@ -66,13 +64,14 @@ async def update_portfolio(
   portfolio_id: str,
   portfolio: PortfolioUpdate,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
-  current_user_id: str = Depends(get_current_user_id)
+  current_user: UserResponse = Depends(get_current_user),
 ):
+  user = await current_user
   try:
     return await portfolio_service.update_portfolio(
       portfolio_id,
       portfolio,
-      current_user_id
+      user.id
     )
   except ValueError as e:
     logging.error(f'Error updating portfolio: {e}')
@@ -87,10 +86,11 @@ async def update_portfolio(
 async def delete_portfolio(
   portfolio_id: str,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
-  current_user_id: str = Depends(get_current_user_id)
+  current_user: UserResponse = Depends(get_current_user),
 ):
+  user = await current_user
   try:
-    await portfolio_service.delete_portfolio(portfolio_id, current_user_id)
+    await portfolio_service.delete_portfolio(portfolio_id, user.id)
   except ValueError as e:
     logging.error(f'Error deleting portfolio: {e}')
     raise HTTPException(status_code=400, detail=str(e))
@@ -105,10 +105,11 @@ async def delete_portfolio(
 async def get_portfolio(
   portfolio_id: str,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
-  current_user_id: str = Depends(get_current_user_id)
+  current_user: UserResponse = Depends(get_current_user),
 ):
+  user = await current_user
   try:
-    return await portfolio_service.get_portfolio(portfolio_id, current_user_id)
+    return await portfolio_service.get_portfolio(portfolio_id, user.id)
   except ValueError as e:
     logging.error(f'Error getting portfolio: {e}')
     raise HTTPException(status_code=404, detail=str(e))
