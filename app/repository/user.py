@@ -1,7 +1,6 @@
 from typing import Optional
 
 from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
-
 from app.core.firestore_db import db
 
 from app.models.user import User, UserUpdate
@@ -16,7 +15,7 @@ class UserRepository:
     self.collection = db.collection(u'users')
     self.user_schema = user_schema
 
-  def get_all_users(self) -> list[User]:
+  async def get_all_users(self) -> list[User]:
     """
     Get all users from the database
     :rtype list[User]
@@ -65,7 +64,7 @@ class UserRepository:
     except Exception as e:
       raise ValueError(str(e))
 
-  def find_user_by_id(self, user_id: str) -> Optional[User]:
+  async def find_user_by_id(self, user_id: str) -> Optional[User]:
     user = self.collection.document(user_id).get()
     if user.exists:
       return User(**user.to_dict())

@@ -18,7 +18,6 @@ from app.models.user import User, UserUpdate
 from app.repository.user import UserRepository
 from app.schemas.user import UserCreate, UserResponse, UserResponseVerify
 
-
 class UserService:
   """
     A class to represent a user service, and contains
@@ -45,7 +44,7 @@ class UserService:
     :raises ValueError: If no users are found
     :raises Exception: If an error occurs
     """
-    users: User = self.repository.get_all_users()
+    users: list[User] = await self.repository.get_all_users()
     if users:
       return [UserResponse(**user.model_dump()) for user in users]
     raise ValueError('No users found')
@@ -88,7 +87,7 @@ class UserService:
     :return: UserResponse
     :raises ValueError: If user not found
     """
-    user: UserUpdate = self.repository.find_user_by_id(user_id)
+    user: User = await self.repository.find_user_by_id(user_id)
     if not user:
       raise ValueError('User not found')
 
@@ -117,7 +116,7 @@ class UserService:
     :raises ValueError: If user not found
     """
     # Check if user exists
-    user: User = self.repository.find_user_by_id(user_id)
+    user: User = await self.repository.find_user_by_id(user_id)
     if not user:
       raise ValueError('User not found')
 
