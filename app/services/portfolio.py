@@ -1,6 +1,5 @@
-from fastapi.params import Depends
-
 from app.models.portfolio import Portfolio
+from app.repository.asset import AssetRepository
 from app.repository.portfolio import PortfolioRepository
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 
@@ -8,8 +7,9 @@ class PortfolioService:
   """
   Portfolio service class to handle business logic for portfolios in the database
   """
-  def __init__(self, repository: PortfolioRepository):
-    self.repository = repository
+  def __init__(self, portfolio_repository: PortfolioRepository, asset_repository: AssetRepository):
+    self.repository = portfolio_repository
+    self.asset_repository = asset_repository
 
   async def get_all_portfolio(self, current_user_id: str) -> list[PortfolioResponse]:
     """
@@ -98,3 +98,14 @@ class PortfolioService:
 
     return PortfolioResponse(**portfolio.model_dump())
 
+  async def get_portfolio_by_id(self, portfolio_id: str) -> Portfolio:
+    """
+    Get a portfolio by id
+    :param portfolio_id: str
+    :return: Portfolio
+    """
+    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
+    if not portfolio:
+      raise ValueError('Portfolio not found...')
+
+    return portfolio

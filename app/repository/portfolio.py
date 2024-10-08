@@ -83,7 +83,13 @@ class PortfolioRepository:
     """
     Get all portfolios by user
     """
-    pass
+    return [portfolio.to_dict() for portfolio in self.collection.where(
+      filter = FieldFilter(
+        u'user_id',
+        u'==',
+        user_id
+      )
+    ).get()]
 
   @staticmethod
   def portfolio_to_firestore(portfolio: Portfolio) -> dict:
