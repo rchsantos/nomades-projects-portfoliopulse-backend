@@ -89,3 +89,29 @@ class TransactionService:
     """
     transactions = await self.repository.get_transactions_by_portfolio(portfolio_id)
     return [TransactionResponse(**transaction.model_dump()) for transaction in transactions]
+
+  async def update_transaction(self, transaction_id: str, transaction_data: TransactionBase) -> TransactionResponse:
+    """
+    Update a transaction
+    :param transaction_data: TransactionBase
+    :param transaction_id: str
+    :rtype: TransactionResponse
+    """
+    transaction = await self.repository.get_transaction_by_id(transaction_id)
+    if not transaction:
+      raise ValueError('Transaction not found')
+
+    updated_transaction = transaction.copy(update=transaction_data.dict(exclude_unset=True))
+    await self.repository.update_transaction(transaction_id, updated_transaction)
+    return TransactionResponse(**updated_transaction.model_dump())
+
+  async def delete_transaction(self, transaction_id: str) -> None:
+    """
+    Delete a transaction by its ID
+    :param transaction_id: str
+    :rtype: None
+    """
+    transaction = await self.repository.get_transaction_by_id(transaction_id)
+    if not transaction:
+      raise ValueError('Transaction not found')
+    await self.repository.delete_transaction(transaction_id)

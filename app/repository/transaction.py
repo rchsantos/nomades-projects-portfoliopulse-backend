@@ -42,6 +42,43 @@ class TransactionRepository:
       except Exception as e:
         raise ValueError(str(e))
 
+    async def update_transaction(self, transaction_id: str, updated_transaction: Transaction) -> None:
+        """
+        Update an existing transaction in the database
+        :param transaction_id: str
+        :param updated_transaction: Transaction
+        :rtype: None
+        """
+        try:
+            transaction_ref = self.collection.document(transaction_id)
+            transaction_ref.update(self.transaction_to_firestore(updated_transaction))
+        except Exception as e:
+            raise ValueError(str(e))
+
+    async def delete_transaction(self, transaction_id: str) -> None:
+        """
+        Delete a transaction from the database
+        :param transaction_id: str
+        :rtype: None
+        """
+        try:
+            transaction_ref = self.collection.document(transaction_id)
+            transaction_ref.delete()
+        except Exception as e:
+            raise ValueError(str(e))
+
+    async def get_transaction_by_id(self, transaction_id: str) -> Transaction:
+      """
+      Get a transaction by id
+      :param transaction_id: str
+      :rtype: Transaction
+      """
+      try:
+        transaction = self.collection.document(transaction_id).get()
+        return self.firestore_to_transaction(transaction)
+      except Exception as e:
+        raise ValueError(str(e))
+
     @staticmethod
     def transaction_to_firestore(transaction: Transaction) -> dict:
         """

@@ -48,3 +48,42 @@ async def create_transaction(
     return await transaction_service.create_transaction(transaction)
   except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
+
+@router.patch(
+  '/{transaction_id}',
+  response_model=TransactionResponse,
+  status_code=status.HTTP_200_OK,
+  description='Update a transaction',
+  response_description='Transaction updated successfully'
+)
+async def update_transaction(
+  portfolio_id: str,
+  transaction_id: str,
+  transaction: TransactionBase,
+  transaction_service: TransactionService = Depends(get_transaction_service),
+  current_user: UserResponse = Depends(get_current_user)
+):
+  try:
+    user = await current_user
+    transaction.user_id = user.id
+    transaction.portfolio_id = portfolio_id
+    return await transaction_service.update_transaction(transaction_id, transaction)
+  except ValueError as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete(
+    '/{transaction_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    description='Delete a transaction',
+    response_description='Transaction deleted successfully'
+)
+async def delete_transaction(
+    transaction_id: str,
+    transaction_service: TransactionService = Depends(get_transaction_service),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    try:
+        user = await current_user
+        await transaction_service.delete_transaction(transaction_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
