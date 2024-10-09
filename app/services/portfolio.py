@@ -1,6 +1,8 @@
 from typing import List, Dict, Any
 
 import yfinance as yf
+
+from app.models.asset import Asset
 from app.models.portfolio import Portfolio
 from app.repository.asset import AssetRepository
 from app.repository.portfolio import PortfolioRepository
@@ -38,7 +40,7 @@ class PortfolioService:
     portfolio = Portfolio(
       name = portfolio.name,
       description = portfolio.description,
-      tickers = portfolio.tickers,
+      sets=[Asset(**asset.model_dump()) for asset in portfolio.assets] if portfolio.assets else [],
       user_id = current_user_id,
       strategy = portfolio.strategy
     )
