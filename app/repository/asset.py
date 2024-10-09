@@ -14,21 +14,22 @@ class AssetRepository:
     self.collection = db.collection(u'assets')
     self.asset_schema = asset_schema
 
-  async def get_assets(self, portfolio_id: str) -> list[Asset]:
+  async def get_all_assets(self, portfolio_id: str, user_id: str) -> list[Asset]:
     """
-    Get all assets from the database
+    Get all assets for a given portfolio and user
     :param portfolio_id: str
-    :rtype: list[Asset]
+    :param user_id: str
+    :return: list[Asset]
     """
-    return [
-      self.firestore_to_asset(asset) for asset in self.collection.where(
-        filter = FieldFilter(
-          u'portfolio_id',
-          u'==',
-          portfolio_id
-        )
-      ).get()
-    ]
+    return [self.firestore_to_asset(asset) for asset in self.collection.where(
+      filter=FieldFilter(
+        u'portfolio_id', u'==', portfolio_id
+      )
+    ).where(
+      filter=FieldFilter(
+        u'user_id', u'==', user_id
+      )
+    ).get()]
 
   async def add_asset(self, asset: Asset) -> Asset:
     """

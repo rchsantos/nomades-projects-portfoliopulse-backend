@@ -74,7 +74,7 @@ class PortfolioRepository:
     try:
       portfolio = self.collection.document(portfolio_id).get()
       if portfolio.exists:
-        return Portfolio(**portfolio.to_dict())
+        return self.firestore_to_portfolio(portfolio)
     except Exception as e:
       raise ValueError(str(e))
 
@@ -97,7 +97,7 @@ class PortfolioRepository:
       u'id': portfolio.id,
       u'name': portfolio.name,
       u'description': portfolio.description,
-      u'tickers': portfolio.tickers,
+      u'assets': portfolio.assets,
       u'user_id': portfolio.user_id,
       u'strategy': portfolio.strategy
     }
@@ -109,7 +109,7 @@ class PortfolioRepository:
       id = portfolio_document.id,
       name = portfolio_data['name'],
       description = portfolio_data['description'],
-      tickers = portfolio_data['tickers'],
+      assets = portfolio_data['assets'] if 'assets' in portfolio_data else [],
       user_id = portfolio_data['user_id'],
       strategy = portfolio_data['strategy']
     )

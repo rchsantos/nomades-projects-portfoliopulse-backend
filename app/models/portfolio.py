@@ -3,7 +3,6 @@ from typing import List, Optional
 
 from app.models.asset import Asset
 
-
 class Portfolio(BaseModel):
   id: Optional[str] = Field(None)
   user_id: str
@@ -13,6 +12,7 @@ class Portfolio(BaseModel):
   strategy: Optional[str] = None
   total_value: Optional[float] = 0.0
   total_return: Optional[float] = 0.0
+  currency: Optional[str] = None
 
   class Config:
     from_attributes = True

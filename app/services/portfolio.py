@@ -1,6 +1,7 @@
 from app.models.portfolio import Portfolio
 from app.repository.asset import AssetRepository
 from app.repository.portfolio import PortfolioRepository
+from app.schemas.asset import AssetResponse
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 
 class PortfolioService:
@@ -96,7 +97,12 @@ class PortfolioService:
     if portfolio.user_id != user_id:
       raise ValueError('You do not have permission to view this portfolio...')
 
-    return PortfolioResponse(**portfolio.model_dump())
+    # Fetch the assets linked to the portfolio
+    assets = await self.asset_repository.get_all_assets(portfolio_id, user_id)
+    asset_responses = [AssetResponse(**asset.model_dump()) for asset in assets]
+
+    # Include assets in the PortfolioResponse
+    return PortfolioResponse(**portfolio.model_dump(exclude={"assets"}), assets=asset_responses)
 
   async def get_portfolio_by_id(self, portfolio_id: str) -> Portfolio:
     """

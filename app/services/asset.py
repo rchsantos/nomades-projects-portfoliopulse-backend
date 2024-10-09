@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy.util import await_only
 
 from app.models.asset import Asset
@@ -29,17 +31,15 @@ class AssetService:
 
     return AssetResponse(**asset.model_dump())
 
-  # async def get_all_assets(self, portfolio_id: str, current_user_id: str):
-  #   """
-  #   Get all assets from the database
-  #   :param portfolio_id: str
-  #   :param current_user_id: str
-  #   :rtype: list[AssetResponse]
-  #   """
-  #   assets: list[Asset] = await self.repository.get_assets(portfolio_id)
-  #   if assets:
-  #     return [AssetResponse(**asset.model_dump()) for asset in assets]
-  #   raise ValueError('No assets found...')
+  async def get_all_assets(self, portfolio_id: str, user_id: str) -> list[AssetResponse]:
+    """
+    Get all assets for a given portfolio and user
+    :param portfolio_id: str
+    :param user_id: str
+    :return: list[Asset]
+    """
+    assets = await self.repository.get_all_assets(portfolio_id, user_id)
+    return [AssetResponse(**asset.model_dump()) for asset in assets]
 
   async def update_asset(
     self,
