@@ -1,4 +1,5 @@
-from google.cloud.firestore_v1 import FieldFilter
+from google.cloud.firestore_v1 import FieldFilter, DocumentSnapshot
+from sqlalchemy.testing.plugin.plugin_base import logging
 
 from app.core.firestore_db import db
 from app.models.asset import Asset
@@ -13,21 +14,22 @@ class AssetRepository:
     self.collection = db.collection(u'assets')
     self.asset_schema = asset_schema
 
-  async def get_assets(self, portfolio_id: str) -> list[Asset]:
+  async def get_all_assets(self, portfolio_id: str, user_id: str) -> list[Asset]:
     """
-    Get all assets from the database
+    Get all assets for a given portfolio and user
     :param portfolio_id: str
-    :rtype: list[Asset]
+    :param user_id: str
+    :return: list[Asset]
     """
-    return [
-      self.firestore_to_asset(asset) for asset in self.collection.where(
-        filter = FieldFilter(
-          u'portfolio_id',
-          u'==',
-          portfolio_id
-        )
-      ).get()
-    ]
+    return [self.firestore_to_asset(asset) for asset in self.collection.where(
+      filter=FieldFilter(
+        u'portfolio_id', u'==', portfolio_id
+      )
+    ).where(
+      filter=FieldFilter(
+        u'user_id', u'==', user_id
+      )
+    ).get()]
 
   async def add_asset(self, asset: Asset) -> Asset:
     """
@@ -42,19 +44,20 @@ class AssetRepository:
     except Exception as e:
       raise ValueError(str(e))
 
-  async def update_asset(self, asset_id: str, asset: dict) -> Asset:
+  async def update_asset(self, asset: asset_schema.AssetUpdate) -> Asset:
     """
     Update an asset in the database
-    :param asset_id: str
     :param asset: AssetUpdate
     :rtype: Asset
     """
     try:
-      asset_ref = self.collection.document(asset_id)
-      asset_ref.update(asset)
+      print('Asset ID:', asset.id)
+      asset_ref = self.collection.document(asset.id)
+      asset_ref.update(asset.model_dump(exclude_unset=True))
       updated_asset = asset_ref.get()
       return self.firestore_to_asset(updated_asset)
     except Exception as e:
+      logging.error(f'Error updating asset: {e}')
       raise ValueError(str(e))
 
   async def delete_asset(self, asset_id: str) -> None:
@@ -75,12 +78,42 @@ class AssetRepository:
     except Exception as e:
       raise ValueError(str(e))
 
+  async def get_asset_by_symbol(self, portfolio_id: str, symbol: str):
+    """
+    Get an asset by symbol
+    :param portfolio_id: str
+    :param symbol: str
+    :rtype: Asset
+    """
+    try:
+      asset_query = self.collection.where(
+        filter = FieldFilter(
+          u'portfolio_id',
+          u'==',
+          portfolio_id
+        )
+      ).where(
+        filter = FieldFilter(
+          u'symbol',
+          u'==',
+          symbol
+        )
+      ).get()
+
+      if not asset_query:
+        raise ValueError('Asset not found...')
+
+      return self.firestore_to_asset(asset_query[0])
+    except Exception as e:
+      raise ValueError(str(e))
+
   @staticmethod
   def asset_to_firestore(asset: Asset) -> dict:
     return {
+      u'id': asset.id,
       u'name': asset.name,
       u'symbol': asset.symbol,
-      u'quantity': asset.quantity,
+      u'shares': asset.shares,
       u'purchase_price': asset.purchase_price,
       u'currency': asset.currency,
       u'portfolio_id': asset.portfolio_id,
@@ -88,14 +121,15 @@ class AssetRepository:
     }
 
   @staticmethod
-  def firestore_to_asset(asset) -> Asset:
+  def firestore_to_asset(asset_document: DocumentSnapshot) -> Asset:
+    asset_data = asset_document.to_dict()
     return Asset(
-      id = asset.id,
-      name = asset.get(u'name'),
-      symbol = asset.get(u'symbol'),
-      quantity = asset.get(u'quantity'),
-      purchase_price = asset.get(u'purchase_price'),
-      currency = asset.get(u'currency'),
-      portfolio_id = asset.get(u'portfolio_id'),
-      user_id = asset.get(u'user_id')
+      id = asset_document.id,
+      name = asset_data['name'],
+      symbol = asset_data['symbol'],
+      shares = asset_data['shares'],
+      purchase_price = asset_data['purchase_price'],
+      currency = asset_data['currency'],
+      portfolio_id = asset_data['portfolio_id'],
+      user_id = asset_data['user_id']
     )

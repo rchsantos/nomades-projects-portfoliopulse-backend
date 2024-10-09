@@ -1,11 +1,9 @@
 import os
 import uvicorn
-import importlib
-import pkgutil
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import user, auth, portfolio, asset
+from app.routes import user, auth, portfolio, asset, transaction
 
 # Initialize fastapi app
 app = FastAPI(
@@ -28,12 +26,20 @@ app.add_middleware(
   allow_headers=["*"]
 )
 
+# TODO: Add a route to handle the root URL When the Application is deployed
 # Import and include routers from all modules in app.routes dynamically.
-package = 'app.routes'
-for _, module_name, _ in pkgutil.iter_modules([package.replace('.', '/')]):
-  module = importlib.import_module(f'{package}.{module_name}')
-  if hasattr(module, 'router'):
-    app.include_router(getattr(module, 'router'), prefix=prefix)
+# package = 'app.routes'
+# for _, module_name, _ in pkgutil.iter_modules([package.replace('.', '/')]):
+#   module = importlib.import_module(f'{package}.{module_name}')
+#   if hasattr(module, 'router'):
+#     app.include_router(getattr(module, 'router'), prefix=prefix)
+
+app.include_router(auth.router, prefix=prefix)
+app.include_router(user.router, prefix=prefix)
+app.include_router(portfolio.router, prefix=prefix)
+app.include_router(asset.router, prefix=prefix)
+app.include_router(transaction.router, prefix=prefix)
+
 
 if __name__ == "__main__":
     uvicorn.run('main:app', host="0.0.0.0", port=5050, reload=True)

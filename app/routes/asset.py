@@ -1,8 +1,8 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.testing.suite.test_reflection import users
 
 from app.dependencies import get_current_user, get_asset_service
-from app.schemas.asset import AssetResponse, AssetCreate
+from app.schemas.asset import AssetResponse, AssetUpdate, AssetBase
 from app.schemas.user import UserResponse
 from app.services.asset import AssetService
 
@@ -29,6 +29,28 @@ async def get_assets(
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
+@router.post(
+  '/',
+  response_model=AssetResponse,
+  status_code=status.HTTP_201_CREATED,
+  description='Create a new asset in the portfolio',
+  response_description='Asset created successfully'
+)
+async def create_asset(
+  portfolio_id: str,
+  asset: AssetBase,
+  asset_service: AssetService = Depends(get_asset_service),
+  current_user: UserResponse = Depends(get_current_user)
+):
+  try:
+    user = await current_user
+    asset.user_id = user.id
+    asset.portfolio_id = portfolio_id
+    return await asset_service.create_asset(asset)
+  except ValueError as e:
+    logging.error(f'Error creating asset: {e}')
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 @router.patch(
   '/{asset_id}',
   response_model=AssetResponse,
@@ -39,33 +61,16 @@ async def get_assets(
 async def update_asset(
   portfolio_id: str,
   asset_id: str,
-  asset: AssetCreate,
+  asset: AssetUpdate,
   asset_service: AssetService = Depends(get_asset_service),
   current_user: UserResponse = Depends(get_current_user)
 ):
   try:
     user = await current_user
-    return await asset_service.update_asset(portfolio_id, asset_id, asset, user.id)
-  except ValueError as e:
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.post(
-  '/',
-  response_model=AssetResponse,
-  status_code=status.HTTP_201_CREATED,
-  description='Create a new asset',
-  response_description='Asset created successfully'
-)
-async def create_asset(
-  portfolio_id: str,
-  asset: AssetCreate,
-  asset_service: AssetService = Depends(get_asset_service),
-  current_user: UserResponse = Depends(get_current_user)
-):
-  try:
-    user = await current_user
-    return await asset_service.create_asset(portfolio_id, asset, user.id)
+    asset.user_id = user.id
+    asset.portfolio_id = portfolio_id
+    asset.id = asset_id
+    return await asset_service.update_asset(asset)
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
