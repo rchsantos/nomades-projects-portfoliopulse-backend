@@ -5,6 +5,7 @@ from fastapi import (
   Depends
 )
 
+from app.schemas.asset import PortfolioValueResponse
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 from app.schemas.user import UserResponse
 from app.services.portfolio import PortfolioService
@@ -112,4 +113,23 @@ async def get_portfolio(
     return await portfolio_service.get_portfolio(portfolio_id, user.id)
   except ValueError as e:
     logging.error(f'Error getting portfolio: {e}')
+    raise HTTPException(status_code=404, detail=str(e))
+
+@router.get(
+  '/{portfolio_id}/total-value',
+  response_model=PortfolioValueResponse,
+  status_code=200,
+  description='Get total value, invested value, and return percentage of a portfolio by id',
+  response_description='Portfolio value retrieved successfully'
+)
+async def get_total_portfolio_value(
+  portfolio_id: str,
+  portfolio_service: PortfolioService = Depends(get_portfolio_service),
+  current_user: UserResponse = Depends(get_current_user),
+):
+  user = await current_user
+  try:
+    return await portfolio_service.calculate_portfolio_value(portfolio_id, user.id)
+  except ValueError as e:
+    logging.error(f'Error getting portfolio value: {e}')
     raise HTTPException(status_code=404, detail=str(e))

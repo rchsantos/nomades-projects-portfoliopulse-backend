@@ -131,5 +131,5 @@ class AssetRepository:
       purchase_price = asset_data['purchase_price'],
       currency = asset_data['currency'],
       portfolio_id = asset_data['portfolio_id'],
-      user_id = asset_data['user_id']
+      user_id = asset_data['user_id'],
     )
