@@ -1,7 +1,12 @@
+from typing import List, Dict, Any
+
+import yfinance as yf
+
+from app.models.asset import Asset
 from app.models.portfolio import Portfolio
 from app.repository.asset import AssetRepository
 from app.repository.portfolio import PortfolioRepository
-from app.schemas.asset import AssetResponse
+from app.schemas.asset import AssetResponse, PortfolioValueResponse
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
 
 class PortfolioService:
@@ -35,7 +40,7 @@ class PortfolioService:
     portfolio = Portfolio(
       name = portfolio.name,
       description = portfolio.description,
-      tickers = portfolio.tickers,
+      sets=[Asset(**asset.model_dump()) for asset in portfolio.assets] if portfolio.assets else [],
       user_id = current_user_id,
       strategy = portfolio.strategy
     )
@@ -103,6 +108,32 @@ class PortfolioService:
 
     # Include assets in the PortfolioResponse
     return PortfolioResponse(**portfolio.model_dump(exclude={"assets"}), assets=asset_responses)
+
+  async def calculate_portfolio_value(self, portfolio_id: str, user_id: str) -> PortfolioValueResponse:
+    """
+    Calculate the value of a portfolio
+    :param portfolio_id:
+    :param user_id:
+    :return:
+    """
+    portfolio = await self.get_portfolio(portfolio_id, user_id)
+
+    total_investment = 0
+    total_value = 0
+
+    for asset in portfolio.assets:
+      total_investment += asset.purchase_price * asset.shares
+      stock = yf.Ticker(asset.symbol)
+      stock_price = stock.history(period='1d')['Close'].values[0]
+      total_value += stock_price * asset.shares
+
+    return_percentage = ((total_value - total_investment) / total_investment) * 100 if total_investment > 0 else 0
+
+    return PortfolioValueResponse(
+      total_investment=total_investment,
+      total_value=float(total_value),
+      return_percentage=float(return_percentage)
+    )
 
   async def get_portfolio_by_id(self, portfolio_id: str) -> Portfolio:
     """

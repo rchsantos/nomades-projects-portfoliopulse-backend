@@ -25,6 +25,16 @@ class AssetResponse(AssetBase):
   id: str
   portfolio_id: str
   user_id: str
+  shares: float = Field(...)
+  purchase_price: float = Field(...)
+
+  class Config:
+    from_attributes = True
+
+class PortfolioValueResponse(BaseModel):
+  total_investment: float
+  total_value: float
+  return_percentage: float
 
   class Config:
     from_attributes = True

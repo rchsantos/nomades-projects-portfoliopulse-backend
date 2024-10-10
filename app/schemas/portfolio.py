@@ -6,7 +6,7 @@ from app.schemas.asset import AssetResponse
 class PortfolioBase(BaseModel):
   name: str
   description: Optional[str] = None
-  assets: Optional[List[str]] = None
+  assets: Optional[List[AssetResponse]] = None
   strategy: Optional[str] = None
 
 class PortfolioResponse(BaseModel):
