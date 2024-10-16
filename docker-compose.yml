@@ -11,7 +11,9 @@ services:
       - .:/app
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 5050 --reload --log-level debug
     restart: always
-
+    depends_on:
+      - mongodb
+      - mailhog
 
   mongodb:
     image: mongo
@@ -25,10 +27,25 @@ services:
     volumes:
       - ./docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
 
-  adminer:
-    image: adminer
+  # Add DB client for MongoDB
+  mongo-express:
+    image: mongo-express
+    restart: always
     ports:
-      - "8080:8080"
+    - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: root
+      ME_CONFIG_BASICAUTH_PASSWORD: password
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+
+  # Add mailing service
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+    - "8025:8025"
+    - "1025:1025"
     restart: always
 
 volumes:
