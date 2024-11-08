@@ -12,11 +12,11 @@
     TODO: Implement the user can manage their own account
 """
 import uuid
-from passlib.context import CryptContext
 
+from passlib.context import CryptContext
 from app.models.user import User, UserUpdate
 from app.repository.user import UserRepository
-from app.schemas.user import UserCreate, UserResponse, UserResponseVerify
+from app.schemas.user import UserCreate, UserResponseVerify, UserBase, UserResponse
 
 class UserService:
   """
@@ -44,7 +44,7 @@ class UserService:
     :raises ValueError: If no users are found
     :raises Exception: If an error occurs
     """
-    users: list[User] = await self.repository.get_all_users()
+    users: list[User] = await self.repository.fetch_users()
     if users:
       return [UserResponse(**user.model_dump()) for user in users]
     raise ValueError('No users found')
@@ -56,9 +56,10 @@ class UserService:
     :type user_data: User
     :return: UserResponse
     """
-    # Check if user already exists
-    if self.repository.find_user_by_email(user_data.email):
-      raise ValueError('User already exists')
+    # Check if user already exists by email
+    existing_user = await self.repository.find_user_by_email(user_data.email)
+    if existing_user:
+      raise ValueError('User withing email already exists')
 
     # Generate Salt & Hash Password
     salt = self.generate_salt()
@@ -76,10 +77,11 @@ class UserService:
     )
 
     # Add User to Repository
-    await self.repository.add_user(user)
+    result = await self.repository.insert_user(user)
+    user.id = str(result.inserted_id)
     return UserResponse(**user.model_dump())
 
-  async def update_user(self, user_id: str, user_data: dict) -> UserResponse:
+  async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
     """
     Update a user in the database
     :param user_id: str
@@ -87,26 +89,22 @@ class UserService:
     :return: UserResponse
     :raises ValueError: If user not found
     """
-    user: User = await self.repository.find_user_by_id(user_id)
+    user = await self.repository.find_user_by_id(user_id)
     if not user:
       raise ValueError('User not found')
 
+    user_dic = user_data.model_dump(exclude_unset=True)
+
     # If password is provided, hash it
-    if 'password' in user_data:
+    if user_data.password:
       salt = self.generate_salt()
-      hashed_password = self.hash_password(user_data['password'], salt)
-      user_data['salt'] = salt
-      user_data['password'] = hashed_password
+      hashed_password = self.hash_password(user_data.password, salt)
+      user_dic['salt'] = salt
+      user_dic['password'] = hashed_password
 
-    # Update all field values in the user object
-    for key, value in user_data.items():
-      if key != 'password':
-        setattr(user, key, value)
-
-    # Update user in the repository
-    await self.repository.update_user(user_id, user)
-
-    return UserResponse(**user.model_dump())
+    updated_user = await self.repository.update_user(user_id, user_dic)
+    updated_user['id'] = user_id
+    return UserResponse(**updated_user)
 
   async def delete_user(self, user_id: str) -> None:
     """
@@ -121,45 +119,45 @@ class UserService:
       raise ValueError('User not found')
 
     # Delete user from the repository
-    self.repository.delete_user(user_id)
+    await self.repository.delete_user(user_id)
 
-  async def get_user_by_email(self, email: str) -> UserResponse:
-    """
-    Get a user by email
-    :param email: str
-    :return: UserResponse
-    :raises ValueError: If user not found
-    """
-    user: User = self.repository.find_user_by_email(email)
-    if user:
-      return UserResponse(**user.model_dump())
-    raise ValueError('User not found')
+  # async def get_user_by_email(self, email: str) -> UserResponse:
+  #   """
+  #   Get a user by email
+  #   :param email: str
+  #   :return: UserResponse
+  #   :raises ValueError: If user not found
+  #   """
+  #   user: User = self.repository.find_user_by_email(email)
+  #   if user:
+  #     return UserResponse(**user.model_dump())
+  #   raise ValueError('User not found')
 
-  async def get_user_by_username(self, username: str) -> UserResponse:
-    """
-    Get a user by username
-    :param username: str
-    :rtype: UserResponse
-    :raises ValueError: If user not found
-    """
-    user: User = self.repository.find_user_by_username(username)
-    if user:
-      return UserResponse(**user.model_dump())
-    raise ValueError('User not found')
+  # async def get_user_by_username(self, username: str) -> UserResponse:
+  #   """
+  #   Get a user by username
+  #   :param username: str
+  #   :rtype: UserResponse
+  #   :raises ValueError: If user not found
+  #   """
+  #   user: User = self.repository.find_user_by_username(username)
+  #   if user:
+  #     return UserResponse(**user.model_dump())
+  #   raise ValueError('User not found')
 
-  async def get_user_to_verify_login(self, username: str) -> UserResponseVerify:
-    """
-    Get a user by username to verify login
-    :param username: str
-    :rtype: UserResponse
-    :raises ValueError: If user not found
-    """
-    user: User = self.repository.find_user_by_username(username)
-    if user:
-      return UserResponseVerify(**user.model_dump())
-    raise ValueError('User not found')
+  # async def get_user_to_verify_login(self, username: str) -> UserResponseVerify:
+  #   """
+  #   Get a user by username to verify login
+  #   :param username: str
+  #   :rtype: UserResponse
+  #   :raises ValueError: If user not found
+  #   """
+  #   user: User = self.repository.find_user_by_username(username)
+  #   if user:
+  #     return UserResponseVerify(**user.model_dump())
+  #   raise ValueError('User not found')
 
-  def get_user_me(self):
-    pass
+  # def get_user_me(self):
+  #   pass
 
 

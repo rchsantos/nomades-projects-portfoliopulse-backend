@@ -12,6 +12,21 @@ services:
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 5050 --reload --log-level debug
     restart: always
 
+#  debug:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8000:8000"
+#      - "5678:5678"
+#    env_file:
+#      - .env
+#    volumes:
+#      - .:/app
+#    environment:
+#      - APP_MESSAGE=Hello debugger
+#    command: poetry run uvicorn app.main:app --host 0.0.0.0 --reload --log-level debug
+
   mongodb:
     image: mongo:latest
     restart: unless-stopped
@@ -33,8 +48,6 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://root:password@mongodb:27017
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: password
-#      ME_CONFIG_MONGODB_SERVER: mongodb
-#      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
     links:
       - mongodb
     restart: unless-stopped
