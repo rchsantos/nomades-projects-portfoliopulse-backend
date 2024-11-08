@@ -40,9 +40,10 @@ class PortfolioService:
     portfolio = Portfolio(
       name = portfolio.name,
       description = portfolio.description,
-      sets=[Asset(**asset.model_dump()) for asset in portfolio.assets] if portfolio.assets else [],
+      asets=[Asset(**asset.model_dump()) for asset in portfolio.assets] if portfolio.assets else [],
       user_id = current_user_id,
-      strategy = portfolio.strategy
+      strategy = portfolio.strategy,
+      currency = portfolio.currency
     )
 
     await self.repository.add_portfolio(portfolio)

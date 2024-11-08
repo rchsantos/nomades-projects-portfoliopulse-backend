@@ -7,9 +7,9 @@ class Asset(BaseModel):
   portfolio_id: str = Field(...)
   symbol: str = Field(...)
   name: str = Field(...)
-  shares: float = Field(...)
-  purchase_price: float = Field(...),
-  currency: str = Field(...)
+  shares: Optional[float] = Field(...)
+  purchase_price: Optional[float] = Field(...),
+  currency: Optional[str] = Field(...)
   user_id: Optional[str] = Field(None)
 
   class Config:

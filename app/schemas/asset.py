@@ -3,10 +3,10 @@ from typing import Optional
 
 class AssetBase(BaseModel):
   symbol: str = Field(...)
-  name: str = Field(...)
-  shares: float = Field(...)
-  purchase_price: float = Field(...),
-  currency: str = Field(...)
+  name: Optional[str] = None
+  shares: Optional[float] = Field(None)
+  purchase_price: Optional[float] = Field(None)
+  currency: Optional[str] = None
 
 class AssetUpdate(BaseModel):
   id: Optional[str] = None
@@ -22,11 +22,11 @@ class AssetUpdate(BaseModel):
     from_attributes = True
 
 class AssetResponse(AssetBase):
-  id: str
+  id: Optional[str]
   portfolio_id: str
   user_id: str
-  shares: float = Field(...)
-  purchase_price: float = Field(...)
+  shares: Optional[float] = Field(None)
+  purchase_price: Optional[float] = Field(None)
 
   class Config:
     from_attributes = True

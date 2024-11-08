@@ -8,6 +8,10 @@ class PortfolioBase(BaseModel):
   description: Optional[str] = None
   assets: Optional[List[AssetResponse]] = None
   strategy: Optional[str] = None
+  currency: Optional[str] = None
+
+class PortfolioCreate(PortfolioBase):
+  pass
 
 class PortfolioResponse(BaseModel):
   id: Optional[str]

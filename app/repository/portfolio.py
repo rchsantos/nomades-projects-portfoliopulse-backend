@@ -1,3 +1,5 @@
+from locale import currency
+
 from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
 
 from app.core.firestore_db import db
@@ -99,7 +101,8 @@ class PortfolioRepository:
       u'description': portfolio.description,
       u'assets': portfolio.assets,
       u'user_id': portfolio.user_id,
-      u'strategy': portfolio.strategy
+      u'strategy': portfolio.strategy,
+      u'currency': portfolio.currency
     }
 
   @staticmethod
@@ -111,5 +114,6 @@ class PortfolioRepository:
       description = portfolio_data['description'],
       assets = portfolio_data['assets'] if 'assets' in portfolio_data else [],
       user_id = portfolio_data['user_id'],
-      strategy = portfolio_data['strategy']
+      strategy = portfolio_data['strategy'],
+      currency = portfolio_data['currency'] if 'currency' in portfolio_data else None
     )

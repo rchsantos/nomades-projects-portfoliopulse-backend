@@ -7,7 +7,7 @@ class Portfolio(BaseModel):
   id: Optional[str] = Field(None)
   user_id: str
   name: str
-  assets: List[Asset] = []
+  assets: Optional[List[Asset]] = None
   description: Optional[str] = None
   strategy: Optional[str] = None
   total_value: Optional[float] = 0.0
