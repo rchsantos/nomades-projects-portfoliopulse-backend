@@ -133,17 +133,20 @@ class UserService:
   #     return UserResponse(**user.model_dump())
   #   raise ValueError('User not found')
 
-  # async def get_user_by_username(self, username: str) -> UserResponse:
-  #   """
-  #   Get a user by username
-  #   :param username: str
-  #   :rtype: UserResponse
-  #   :raises ValueError: If user not found
-  #   """
-  #   user: User = self.repository.find_user_by_username(username)
-  #   if user:
-  #     return UserResponse(**user.model_dump())
-  #   raise ValueError('User not found')
+  async def get_user_by_username(self, username: str) -> UserResponse:
+    """
+    Get a user by username
+    :param username: str
+    :rtype: UserResponse
+    :raises ValueError: If user not found
+    """
+    user = await self.repository.find_user_by_username(username)
+    # user: User = await self.repository.find_user_by_username(username)
+    if user:
+      # user_dict = user.model_dump()
+      user['id'] = str(user['_id'])
+      return UserResponse(**user)
+    raise ValueError('User not found')
 
   async def get_user_to_verify_login(self, username: str) -> UserResponseVerify:
     """

@@ -1,5 +1,3 @@
-from typing import List, Dict, Any
-
 import yfinance as yf
 
 from app.models.asset import Asset
@@ -23,7 +21,7 @@ class PortfolioService:
     # :param current_user_id: str
     :return: list[PortfolioResponse]
     """
-    portfolios = await self.repository.get_all_portfolios(current_user_id)
+    portfolios: list[Portfolio] = await self.repository.fetch_all_portfolios(current_user_id)
     if portfolios:
       return [PortfolioResponse(**portfolio.model_dump()) for portfolio in portfolios]
     raise ValueError('No portfolios found...')
@@ -35,19 +33,19 @@ class PortfolioService:
     :param current_user_id: str
     :return: PortfolioResponse
     """
-
     # Validate the portfolio data
     portfolio = Portfolio(
       name = portfolio.name,
       description = portfolio.description,
-      asets=[Asset(**asset.model_dump()) for asset in portfolio.assets] if portfolio.assets else [],
+      assets = portfolio.assets,
+      # asets=[Asset(**asset.model_dump()) for asset in portfolio.assets] if portfolio.assets else [],
       user_id = current_user_id,
       strategy = portfolio.strategy,
       currency = portfolio.currency
     )
 
-    await self.repository.add_portfolio(portfolio)
-
+    result = await self.repository.add_portfolio(portfolio)
+    portfolio.id = str(result.inserted_id)
     return PortfolioResponse(**portfolio.model_dump())
 
   async def update_portfolio(
@@ -63,11 +61,11 @@ class PortfolioService:
     :param user_id: str
     :return: PortfolioResponse
     """
-    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
+    portfolio = await self.repository.find_portfolio_by_id(portfolio_id)
     if not portfolio:
       raise ValueError('Portfolio not found...')
 
-    if portfolio.user_id != user_id:
+    if portfolio['user_id'] != user_id:
       raise ValueError('You do not have permission to update this portfolio...')
 
     updated_portfolio = await self.repository.update_portfolio(portfolio_id, portfolio_data.model_dump(exclude_unset=True))
@@ -80,11 +78,11 @@ class PortfolioService:
     :param user_id: str
     :return: None
     """
-    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
+    portfolio = await self.repository.find_portfolio_by_id(portfolio_id)
     if not portfolio:
       raise ValueError('Portfolio not found...')
 
-    if portfolio.user_id != user_id:
+    if portfolio['user_id'] != user_id:
       raise ValueError('You do not have permission to delete this portfolio...')
 
     await self.repository.delete_portfolio(portfolio_id)
@@ -96,19 +94,20 @@ class PortfolioService:
     :param user_id: str
     :return: PortfolioResponse
     """
-    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
+    portfolio = await self.repository.find_portfolio_by_id(portfolio_id)
     if not portfolio:
       raise ValueError('Portfolio not found...')
 
-    if portfolio.user_id != user_id:
+    if portfolio['user_id'] != user_id:
       raise ValueError('You do not have permission to view this portfolio...')
 
     # Fetch the assets linked to the portfolio
-    assets = await self.asset_repository.get_all_assets(portfolio_id, user_id)
-    asset_responses = [AssetResponse(**asset.model_dump()) for asset in assets]
+    # assets = await self.asset_repository.get_all_assets(portfolio_id, user_id)
+    # asset_responses = [AssetResponse(**asset.model_dump()) for asset in assets]
 
     # Include assets in the PortfolioResponse
-    return PortfolioResponse(**portfolio.model_dump(exclude={"assets"}), assets=asset_responses)
+    return PortfolioResponse(**portfolio)
+    # return PortfolioResponse(**portfolio.model_dump(exclude={"assets"}), assets=asset_responses)
 
   async def calculate_portfolio_value(self, portfolio_id: str, user_id: str) -> PortfolioValueResponse:
     """
@@ -135,15 +134,3 @@ class PortfolioService:
       total_value=float(total_value),
       return_percentage=float(return_percentage)
     )
-
-  async def get_portfolio_by_id(self, portfolio_id: str) -> Portfolio:
-    """
-    Get a portfolio by id
-    :param portfolio_id: str
-    :return: Portfolio
-    """
-    portfolio = await self.repository.get_portfolio_by_id(portfolio_id)
-    if not portfolio:
-      raise ValueError('Portfolio not found...')
-
-    return portfolio

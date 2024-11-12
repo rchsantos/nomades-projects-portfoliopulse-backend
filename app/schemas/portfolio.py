@@ -1,32 +1,31 @@
+from bson import ObjectId
 from pydantic import BaseModel
 from typing import List, Optional
 
 from app.schemas.asset import AssetResponse
 
 class PortfolioBase(BaseModel):
-  name: str
   description: Optional[str] = None
-  assets: Optional[List[AssetResponse]] = None
+  assets: Optional[List] = None
   strategy: Optional[str] = None
   currency: Optional[str] = None
 
 class PortfolioCreate(PortfolioBase):
-  pass
-
-class PortfolioResponse(BaseModel):
-  id: Optional[str]
   name: str
-  description: Optional[str] = None
-  assets: Optional[List[AssetResponse]] = None
-  strategy: Optional[str] = None
-  user_id: str
-  currency: Optional[str] = None
+  user_id: Optional[str] = None
+
+class PortfolioResponse(PortfolioBase):
+  name: str
+  id: Optional[str]
+  user_id: Optional[str] = None
 
   class Config:
     from_attributes = True
+    json_encoders = { ObjectId: str }
 
 class PortfolioUpdate(BaseModel):
   name: Optional[str] = None
   description: Optional[str] = None
   assets: Optional[List[str]] = None
-  strategy: Optional[str] = None
+  strategy: Optional[str] = None,
+  currency: Optional[str] = None

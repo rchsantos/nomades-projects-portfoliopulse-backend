@@ -55,7 +55,7 @@ async def update_user(
   user_id: str ,
   user_data: UserUpdate,
   user_service: UserService = Depends(get_user_service),
-  # current_user: UserResponse = Depends(get_current_user)
+  current_user: UserResponse = Depends(get_current_user)
 ):
     try:
       updated_user = await user_service.update_user(
@@ -77,6 +77,7 @@ async def delete_user(
   user_service: UserService = Depends(get_user_service),
   current_user: UserResponse = Depends(get_current_user)
 ):
+  user = await current_user
   try:
     await user_service.delete_user(user_id)
   except ValueError as e:
