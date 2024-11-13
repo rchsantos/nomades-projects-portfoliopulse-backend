@@ -2,7 +2,7 @@ from bson import ObjectId
 from pydantic import BaseModel
 from typing import List, Optional
 
-from app.schemas.asset import AssetResponse
+# from app.schemas.asset import AssetResponse
 
 class PortfolioBase(BaseModel):
   description: Optional[str] = None

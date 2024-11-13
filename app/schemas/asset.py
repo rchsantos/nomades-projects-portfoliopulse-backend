@@ -1,40 +1,50 @@
+from bson import ObjectId
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 class AssetBase(BaseModel):
-  symbol: str = Field(...)
   name: Optional[str] = None
-  shares: Optional[float] = Field(None)
-  purchase_price: Optional[float] = Field(None)
+  sector: Optional[str] = None
   currency: Optional[str] = None
+  esg_score: Optional[int] = None
+  analyst_rating: Optional[str] = None
+  tags: Optional[list[str]] = None
+  source: Optional[str] = None
+  last_updated: Optional[str] = None
+  portfolio_id: Optional[str] = None
+
+  class Config:
+    from_attributes = True
+    json_encoders = { ObjectId: str }
+
+class AssetCreate(AssetBase):
+  symbol: str = Field(...)
+  asset_type: str = Field(...)
 
 class AssetUpdate(BaseModel):
-  id: Optional[str] = None
   symbol: Optional[str] = None
   name: Optional[str] = None
-  shares: Optional[float] = Field(None)
-  purchase_price: Optional[float] = Field(None)
+  asset_type: Optional[str] = None
+  sector: Optional[str] = None
   currency: Optional[str] = None
+  esg_score: Optional[int] = None
+  analyst_rating: Optional[str] = None
+  tags: Optional[List[str]] = None
+  source: Optional[str] = None
+  last_updated: Optional[str] = None
   portfolio_id: Optional[str] = None
-  user_id: Optional[str] = None
 
   class Config:
     from_attributes = True
+    json_encoders = { ObjectId: str }
 
 class AssetResponse(AssetBase):
-  id: Optional[str]
+  id: Optional[str] = Field(None, alias='_id')
   portfolio_id: str
-  user_id: str
-  shares: Optional[float] = Field(None)
-  purchase_price: Optional[float] = Field(None)
+  symbol: str
+  asset_type: str
 
   class Config:
     from_attributes = True
-
-class PortfolioValueResponse(BaseModel):
-  total_investment: float
-  total_value: float
-  return_percentage: float
-
-  class Config:
-    from_attributes = True
+    json_encoders = { ObjectId: str }
+    arbitrary_types_allowed = True

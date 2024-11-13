@@ -5,7 +5,7 @@ from fastapi import (
   Depends
 )
 
-from app.schemas.asset import PortfolioValueResponse
+# from app.schemas.asset import PortfolioValueResponse
 from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate, PortfolioCreate
 from app.schemas.user import UserResponse
 from app.services.portfolio import PortfolioService
