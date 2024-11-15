@@ -4,9 +4,6 @@ from sqlalchemy.testing.plugin.plugin_base import logging
 
 from app.core.database import db
 from app.models.asset import Asset
-import app.schemas.asset as asset_schema
-from app.schemas.asset import AssetCreate
-
 
 class AssetRepository:
   """
@@ -15,7 +12,6 @@ class AssetRepository:
   """
   def __init__(self):
     self.collection = db.get_collection('assets')
-    self.asset_schema = asset_schema
 
 
   async def fetch_all_assets(self, portfolio_id: str) -> list[Asset]:
@@ -87,13 +83,3 @@ class AssetRepository:
     :param symbol: str
     """
     return await self.collection.find_one({'symbol': symbol, 'portfolio_id': portfolio_id})
-
-  # async def find_asset_by_symbol_in_portfolio(self, symbol: str, portfolio_id: str) -> dict|None:
-  #   """
-  #   Find an asset by symbol in a portfolio
-  #   :param symbol: str
-  #   :param portfolio_id: str
-  #   :rtype: Asset
-  #   """
-  #   asset = await self.collection.find_one({'symbol': symbol, 'portfolio_id': portfolio_id})
-  #   return asset
