@@ -2,8 +2,6 @@ from bson import ObjectId
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-from app.models.asset import Asset
-
 class Portfolio(BaseModel):
   id: Optional[str] = Field(None)
   user_id: str

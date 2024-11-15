@@ -1,5 +1,7 @@
 from typing import List
 
+from pymongo.results import InsertOneResult
+
 from app.models.asset import Asset
 from app.repository.asset import AssetRepository
 from app.schemas.asset import AssetBase, AssetResponse, AssetUpdate, AssetCreate
@@ -20,16 +22,15 @@ class AssetService:
       return [AssetResponse(**asset.model_dump()) for asset in assets]
     raise ValueError('No assets found...')
 
-  async def create_asset(self, asset: AssetCreate) -> AssetResponse:
+  async def create_asset(self, asset_data: AssetCreate) -> AssetResponse:
     """
     Create a new asset in the database
-    :param asset: AssetBase
+    :param asset_data: AssetCreate
     :rtype: AssetResponse
     """
-    asset = Asset(**asset.model_dump())
-    result = await self.repository.add_asset(asset)
+    asset = Asset(**asset_data.model_dump())
+    result: InsertOneResult = await self.repository.add_asset(asset)
     asset.id = str(result.inserted_id)
-
     return AssetResponse(**asset.model_dump())
 
   async def update_asset(
@@ -82,3 +83,24 @@ class AssetService:
     if asset:
       return AssetResponse(**asset)
     raise ValueError('Asset not found...')
+
+  async def get_asset_by_symbol(self, symbol: str, portfolio_id: str) -> Asset:
+    """
+    Get an asset by its symbol
+    :param portfolio_id:
+    :param symbol: str
+    :rtype: Asset
+    """
+    return await self.repository.find_asset_by_symbol(symbol, portfolio_id)
+
+  async def get_asset_by_symbol_in_portfolio(self, symbol: str, portfolio_id: str) -> Asset|None:
+    """
+    Get an asset by its symbol in a portfolio
+    :param symbol: str
+    :param portfolio_id: str
+    :rtype: Asset
+    """
+    asset: dict = await self.repository.find_asset_by_symbol_in_portfolio(symbol, portfolio_id)
+    if not asset:
+      return None
+    return Asset(**asset)

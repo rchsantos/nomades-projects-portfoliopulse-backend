@@ -32,6 +32,7 @@ class PortfolioService:
     :param portfolio: PortfolioCreate
     :param current_user_id: str
     :return: PortfolioResponse
+    @TODO: Change the PortfolioBase to PortfolioCreate
     """
     # Validate the portfolio data
     portfolio = Portfolio(
@@ -98,6 +99,7 @@ class PortfolioService:
     if not portfolio:
       raise ValueError('Portfolio not found...')
 
+    # Check if the user has permission to view the portfolio
     if portfolio['user_id'] != user_id:
       raise ValueError('You do not have permission to view this portfolio...')
 
