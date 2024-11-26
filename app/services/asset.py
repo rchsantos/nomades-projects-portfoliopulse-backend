@@ -1,10 +1,8 @@
-from typing import List
-
 from pymongo.results import InsertOneResult
 
 from app.models.asset import Asset
 from app.repository.asset import AssetRepository
-from app.schemas.asset import AssetBase, AssetResponse, AssetUpdate, AssetCreate
+from app.schemas.asset import AssetResponse, AssetUpdate, AssetCreate
 
 
 class AssetService:

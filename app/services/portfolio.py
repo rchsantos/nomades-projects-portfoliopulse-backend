@@ -47,7 +47,7 @@ class PortfolioService:
                 if existing_asset:
                     existing_asset['portfolio_ids'].append(portfolio.id)
                     await self.asset_service.update_asset(existing_asset['_id'], existing_asset)
-                    portfolio_assets_ids.append(existing_asset['id'])
+                    portfolio_assets_ids.append(str(existing_asset['_id']))
                 else:
                     asset['portfolio_ids'] = []
                     asset['portfolio_ids'].append(portfolio.id)
