@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from bson import ObjectId
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,7 @@ class Asset(BaseModel):
   source: Optional[str] = Field(None)
   tags: Optional[list[str]] = Field(None)
   esg_score: Optional[int] = Field(None)
-  portfolio_id: Optional[str] = Field(None)
+  portfolio_ids: Optional[List[str]] = Field(None)
 
   class Config:
     from_attributes = True

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_current_user, get_transaction_service
-from app.schemas.transaction import TransactionResponse, TransactionBase, TransactionCreate, TransactionUpdate
+from app.schemas.transaction import TransactionResponse, TransactionCreate, TransactionUpdate
 from app.schemas.user import UserResponse
 from app.services.transaction import TransactionService
 

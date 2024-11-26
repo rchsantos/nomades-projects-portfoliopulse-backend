@@ -16,7 +16,7 @@ import uuid
 from passlib.context import CryptContext
 from app.models.user import User, UserUpdate
 from app.repository.user import UserRepository
-from app.schemas.user import UserCreate, UserResponseVerify, UserBase, UserResponse
+from app.schemas.user import UserCreate, UserResponseVerify, UserResponse
 
 class UserService:
   """
@@ -57,7 +57,7 @@ class UserService:
     :return: UserResponse
     """
     # Check if user already exists by email
-    existing_user = await self.repository.find_user_by_email(user_data.email)
+    existing_user = await self.repository.find_user_by_email(str(user_data.email))
     if existing_user:
       raise ValueError('User withing email already exists')
 

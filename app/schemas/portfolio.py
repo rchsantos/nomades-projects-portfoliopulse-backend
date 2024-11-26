@@ -2,7 +2,7 @@ from bson import ObjectId
 from pydantic import BaseModel
 from typing import List, Optional
 
-# from app.schemas.asset import AssetResponse
+from app.models.asset import Asset
 
 class PortfolioBase(BaseModel):
   description: Optional[str] = None
@@ -26,6 +26,6 @@ class PortfolioResponse(PortfolioBase):
 class PortfolioUpdate(BaseModel):
   name: Optional[str] = None
   description: Optional[str] = None
-  assets: Optional[List[str]] = None
+  assets: Optional[List[Asset]] = None
   strategy: Optional[str] = None,
   currency: Optional[str] = None

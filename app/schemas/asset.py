@@ -13,7 +13,7 @@ class AssetBase(BaseModel):
   source: Optional[str] = None
   last_updated: Optional[str] = None
   asset_type: Optional[str] = None
-  portfolio_id: Optional[str] = None
+  portfolio_ids: Optional[List[str]] = None
 
   class Config:
     from_attributes = True
@@ -33,7 +33,7 @@ class AssetUpdate(BaseModel):
   tags: Optional[List[str]] = None
   source: Optional[str] = None
   last_updated: Optional[str] = None
-  portfolio_id: Optional[str] = None
+  portfolio_ids: Optional[List[str]] = None
 
   class Config:
     from_attributes = True
@@ -41,7 +41,7 @@ class AssetUpdate(BaseModel):
 
 class AssetResponse(AssetBase):
   id: Optional[str] = Field(None)
-  portfolio_id: Optional[str]
+  portfolio_ids: Optional[List[str]]
   symbol: Optional[str]
   asset_type: Optional[str]
   sector: Optional[str]

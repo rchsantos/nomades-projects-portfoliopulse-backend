@@ -27,10 +27,7 @@ class PortfolioRepository:
     Add a new portfolio to the database
     """
     try:
-      portfolio_dict = portfolio.model_dump()
-      # result =
-      # portfolio.id = str(result.inserted_id)
-      return await self.collection.insert_one(portfolio_dict)
+      return await self.collection.insert_one(portfolio.model_dump())
     except Exception as e:
       raise ValueError(str(e))
 

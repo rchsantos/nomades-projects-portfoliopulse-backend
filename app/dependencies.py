@@ -22,8 +22,7 @@ def get_current_user(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())
 
 def get_portfolio_service():
   portfolio_repository = PortfolioRepository()
-  asset_repository = AssetRepository()
-  return PortfolioService(portfolio_repository=portfolio_repository, asset_repository=asset_repository)
+  return PortfolioService(portfolio_repository=portfolio_repository, asset_service=get_asset_service())
 
 def get_asset_service():
   asset_repository = AssetRepository()
