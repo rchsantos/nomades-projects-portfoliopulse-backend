@@ -76,10 +76,9 @@ class AssetRepository:
     asset = await self.collection.find_one({'_id': ObjectId(asset_id)})
     return asset
 
-  async def find_asset_by_symbol(self, symbol: str, portfolio_id: str):
+  async def find_asset_by_symbol(self, symbol: str):
     """
     Find an asset by symbol
-    :param portfolio_id:
     :param symbol: str
     """
-    return await self.collection.find_one({'symbol': symbol, 'portfolio_id': portfolio_id})
+    return await self.collection.find_one({'symbol': symbol})

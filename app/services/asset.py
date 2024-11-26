@@ -35,25 +35,25 @@ class AssetService:
 
   async def update_asset(
     self,
-    portfolio_id: str,
+    # portfolio_id: str,
     asset_id: str,
     asset_data: AssetUpdate
   ) -> AssetResponse:
     """
     Update an asset in the database
-    :param portfolio_id:
+    # :param portfolio_id:
     :param asset_data: updated_asset
     :param asset_id: str
     :rtype: AssetResponse
     """
-    asset = await self.repository.find_asset_by_id(asset_id)
+    asset: Asset = await self.repository.find_asset_by_id(asset_id)
     if not asset:
       raise ValueError('Asset not found...')
 
-    if portfolio_id != asset['portfolio_id']:
-      raise ValueError('You do not have permission to update this asset...')
-
-    updated_asset = await self.repository.update_asset(asset_id, asset_data.model_dump(exclude_unset=True))
+    # if portfolio_id != asset['portfolio_id']:
+    #   raise ValueError('You do not have permission to update this asset...')
+    asset = Asset(**asset_data)
+    updated_asset = await self.repository.update_asset(asset_id, asset.model_dump(exclude_unset=True))
 
     return AssetResponse(**updated_asset)
 
@@ -84,14 +84,13 @@ class AssetService:
       return AssetResponse(**asset)
     raise ValueError('Asset not found...')
 
-  async def get_asset_by_symbol(self, symbol: str, portfolio_id: str) -> Asset:
+  async def get_asset_by_symbol(self, symbol: str) -> Asset:
     """
     Get an asset by its symbol
-    :param portfolio_id:
     :param symbol: str
     :rtype: Asset
     """
-    return await self.repository.find_asset_by_symbol(symbol, portfolio_id)
+    return await self.repository.find_asset_by_symbol(symbol)
 
   async def get_asset_by_symbol_in_portfolio(self, symbol: str, portfolio_id: str) -> Asset|None:
     """

@@ -37,26 +37,27 @@ class PortfolioService:
         portfolio = Portfolio(**portfolio.model_dump())
         result = await self.repository.add_portfolio(portfolio)
         portfolio.id = str(result.inserted_id)
+        portfolio_assets_ids = []
 
         # Second, create the assets linked to the portfolio
         if portfolio.assets:
             for asset in portfolio.assets:
                 # Check if the asset exists in the database
-                existing_asset = await self.asset_service.get_asset_by_symbol(asset, portfolio.id)
+                existing_asset = await self.asset_service.get_asset_by_symbol(asset['symbol'])
                 if existing_asset:
                     existing_asset['portfolio_ids'].append(portfolio.id)
-                    await self.asset_service.update_asset(existing_asset['id'], existing_asset)
+                    await self.asset_service.update_asset(existing_asset['_id'], existing_asset)
+                    portfolio_assets_ids.append(existing_asset['id'])
                 else:
                     asset['portfolio_ids'] = []
                     asset['portfolio_ids'].append(portfolio.id)
-                    await self.asset_service.create_asset(asset)
+                    asset_result = await self.asset_service.create_asset(asset)
+                    portfolio_assets_ids.append(str(asset_result.id))
 
-                #
-                # asset['portfolio_ids'] = [portfolio.id]
-                # await self.service_asset.create_asset(asset)
+        # Update the portfolio with the asset ids
+        portfolio = await self.repository.update_portfolio(portfolio.id, {"assets": portfolio_assets_ids})
 
-
-        return PortfolioResponse(**portfolio.model_dump())
+        return PortfolioResponse(**portfolio)
 
     async def update_portfolio(
         self,
