@@ -1,4 +1,5 @@
 import yfinance as yf
+from pymongo.results import InsertOneResult
 
 from app.models.asset import Asset
 from app.models.portfolio import Portfolio
@@ -35,7 +36,7 @@ class PortfolioService:
         # First, create the portfolio
         portfolio.user_id = user_id
         portfolio = Portfolio(**portfolio.model_dump())
-        result = await self.repository.add_portfolio(portfolio)
+        result: InsertOneResult = await self.repository.add_portfolio(portfolio)
         portfolio.id = str(result.inserted_id)
         portfolio_assets_ids = []
 
@@ -55,7 +56,7 @@ class PortfolioService:
                     portfolio_assets_ids.append(str(asset_result.id))
 
         # Update the portfolio with the asset ids
-        portfolio = await self.repository.update_portfolio(portfolio.id, {"assets": portfolio_assets_ids})
+        portfolio: Portfolio = await self.repository.update_portfolio(portfolio.id, {"assets": portfolio_assets_ids})
 
         return PortfolioResponse(**portfolio)
 
@@ -81,7 +82,7 @@ class PortfolioService:
 
         updated_portfolio = await self.repository.update_portfolio(portfolio_id,
                                                                    portfolio_data.model_dump(exclude_unset=True))
-        return PortfolioResponse(**updated_portfolio.model_dump())
+        return PortfolioResponse(**updated_portfolio)
 
     async def delete_portfolio(self, portfolio_id: str, user_id: str):
         """
@@ -114,9 +115,7 @@ class PortfolioService:
         if portfolio['user_id'] != user_id:
             raise ValueError('You do not have permission to view this portfolio...')
 
-        # Fetch the assets linked to the portfolio
-        # assets = await self.asset_repository.get_all_assets(portfolio_id, user_id)
-        # asset_responses = [AssetResponse(**asset.model_dump()) for asset in assets]
+        portfolio['id'] = str(portfolio['_id'])
 
         # Include assets in the PortfolioResponse
         return PortfolioResponse(**portfolio)
