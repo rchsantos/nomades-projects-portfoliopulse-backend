@@ -18,7 +18,7 @@ class AssetRepository:
     """
     Get all assets in the database from the current user
     """
-    asset_cursor = self.collection.find({'portfolio_id': portfolio_id})
+    asset_cursor = self.collection.find({'portfolio_ids': portfolio_id})
     assets = []
     async for asset in asset_cursor:
       asset['id'] = str(asset['_id'])
@@ -37,7 +37,7 @@ class AssetRepository:
       logging.error(f'Error adding asset: {e}')
       raise ValueError(str(e))
 
-  async def update_asset(self, asset_id: str, asset: dict) -> Asset:
+  async def update_asset(self, asset_id: str, asset: dict) -> dict:
     """
     Update an asset in the database
     :param asset_id: str
@@ -52,8 +52,7 @@ class AssetRepository:
           '$currentDate': {'lastUpdated': True}
         }
       )
-      updated_asset = await self.collection.find_one({'_id': ObjectId(asset_id)})
-      return updated_asset
+      return await self.collection.find_one({'_id': ObjectId(asset_id)})
     except Exception as e:
       raise ValueError(str(e))
 
@@ -67,14 +66,13 @@ class AssetRepository:
     except Exception as e:
       raise ValueError(str(e))
 
-  async def find_asset_by_id(self, asset_id: str):
+  async def find_asset_by_id(self, asset_id: str) -> dict:
     """
     Find an asset by ID
     :param asset_id: str
     :rtype: Asset
     """
-    asset = await self.collection.find_one({'_id': ObjectId(asset_id)})
-    return asset
+    return await self.collection.find_one({'_id': ObjectId(asset_id)})
 
   async def find_asset_by_symbol(self, symbol: str):
     """

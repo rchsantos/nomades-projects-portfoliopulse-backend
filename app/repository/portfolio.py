@@ -1,4 +1,5 @@
 from bson import ObjectId
+from pymongo.results import InsertOneResult
 
 from app.core.database import db
 from app.models.portfolio import Portfolio
@@ -22,7 +23,7 @@ class PortfolioRepository:
       portfolios.append(Portfolio(**portfolio))
     return portfolios
 
-  async def add_portfolio(self, portfolio: Portfolio) -> Portfolio:
+  async def add_portfolio(self, portfolio: Portfolio) -> InsertOneResult:
     """
     Add a new portfolio to the database
     """

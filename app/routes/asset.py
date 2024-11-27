@@ -37,15 +37,13 @@ async def get_assets(
   response_description='Asset created successfully'
 )
 async def create_asset(
-  portfolio_id: str,
-  asset: AssetCreate,
+  asset_data: AssetCreate,
   asset_service: AssetService = Depends(get_asset_service),
   current_user: UserResponse = Depends(get_current_user)
 ):
   try:
     user = await current_user
-    asset.portfolio_id = portfolio_id
-    return await asset_service.create_asset(asset)
+    return await asset_service.create_asset(asset_data)
   except ValueError as e:
     logging.error(f'Error creating asset: {e}')
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -66,7 +64,7 @@ async def update_asset(
 ):
   try:
     user = await current_user
-    return await asset_service.update_asset(portfolio_id,asset_id, asset_data)
+    return await asset_service.update_asset(asset_id, asset_data)
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
