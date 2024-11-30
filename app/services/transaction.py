@@ -39,7 +39,7 @@ class TransactionService:
             raise ValueError('Portfolio not found...')
 
         # Check if the asset exists in the portfolio by symbol, if not create a new asset
-        asset: Asset = await self.asset_service.get_asset_by_symbol(transaction.symbol, portfolio_id)
+        asset: Asset = await self.asset_service.get_asset_by_symbol(transaction.symbol)
         asset_id = None
         if not asset:
             ticker = yf.Ticker(transaction.symbol)
