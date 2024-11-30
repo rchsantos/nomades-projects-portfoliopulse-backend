@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_current_user, get_transaction_service
-from app.schemas.transaction import TransactionResponse, TransactionBase
+from app.schemas.transaction import TransactionResponse, TransactionCreate, TransactionUpdate
 from app.schemas.user import UserResponse
 from app.services.transaction import TransactionService
 
@@ -24,7 +24,7 @@ async def get_all_transactions(
 ):
   try:
     user = await current_user
-    return await transaction_service.get_all_transactions(portfolio_id)
+    return await transaction_service.get_all_transactions(portfolio_id, user.id)
   except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -37,15 +37,13 @@ async def get_all_transactions(
 )
 async def create_transaction(
   portfolio_id: str,
-  transaction: TransactionBase,
+  transaction_data: TransactionCreate,
   transaction_service: TransactionService = Depends(get_transaction_service),
   current_user: UserResponse = Depends(get_current_user)
 ):
   try:
     user = await current_user
-    transaction.user_id = user.id
-    transaction.portfolio_id = portfolio_id
-    return await transaction_service.create_transaction(transaction)
+    return await transaction_service.create_transaction(portfolio_id, user.id, transaction_data)
   except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -59,15 +57,13 @@ async def create_transaction(
 async def update_transaction(
   portfolio_id: str,
   transaction_id: str,
-  transaction: TransactionBase,
+  transaction: TransactionUpdate,
   transaction_service: TransactionService = Depends(get_transaction_service),
   current_user: UserResponse = Depends(get_current_user)
 ):
   try:
     user = await current_user
-    transaction.user_id = user.id
-    transaction.portfolio_id = portfolio_id
-    return await transaction_service.update_transaction(transaction_id, transaction)
+    return await transaction_service.update_transaction(portfolio_id, user.id, transaction_id, transaction)
   except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
 
@@ -78,12 +74,13 @@ async def update_transaction(
     response_description='Transaction deleted successfully'
 )
 async def delete_transaction(
+    portfolio_id: str,
     transaction_id: str,
     transaction_service: TransactionService = Depends(get_transaction_service),
     current_user: UserResponse = Depends(get_current_user)
 ):
     try:
         user = await current_user
-        await transaction_service.delete_transaction(transaction_id)
+        await transaction_service.delete_transaction(portfolio_id, user.id, transaction_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

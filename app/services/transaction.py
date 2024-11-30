@@ -1,117 +1,130 @@
-from fastapi import Depends
-from sqlalchemy.util import symbol
+from datetime import datetime
+
+import yfinance as yf
 
 from app.models.asset import Asset
 from app.repository.transaction import TransactionRepository
-from app.schemas.asset import AssetResponse
-from app.schemas.transaction import TransactionResponse, TransactionBase
+from app.schemas.asset import AssetResponse, AssetCreate
+from app.schemas.transaction import TransactionResponse, TransactionBase, TransactionCreate, TransactionUpdate
 from app.services.asset import AssetService
 from app.services.portfolio import PortfolioService
 from app.models.transaction import Transaction
 
 
 class TransactionService:
-  """
-  This class will contain all the business logic for the transaction
-  """
-
-  def __init__(
-    self,
-    repository: TransactionRepository,
-    portfolio_service: PortfolioService,
-    asset_service: AssetService):
-    self.repository = repository
-    self.portfolio_service = portfolio_service
-    self.asset_service = asset_service
-
-  async def create_transaction(self, transaction: TransactionBase) -> TransactionResponse:
     """
-    Create a new transaction for an asset in the portfolio
-    :param transaction: TransactionCreate
-    :rtype: TransactionResponse
+    This class will contain all the business logic for the transaction
     """
-    # Check if the portfolio exists
-    portfolio = await self.portfolio_service.get_portfolio(transaction.portfolio_id, transaction.user_id)
-    if not portfolio:
-      raise ValueError('Portfolio not found...')
+    def __init__(
+        self,
+        repository: TransactionRepository,
+        portfolio_service: PortfolioService,
+        asset_service: AssetService):
+        self.repository = repository
+        self.portfolio_service = portfolio_service
+        self.asset_service = asset_service
 
-    # Check if the asset exists in the portfolio by symbol
-    try:
-      asset: AssetResponse = await self.asset_service.get_asset_by_symbol(transaction.portfolio_id, transaction.symbol) # Need to have a get_asset_by_symbol method in the AssetService
-    except ValueError as e:
-      asset = None
+    async def create_transaction(self, portfolio_id: str, user_id: str,
+                                 transaction: TransactionCreate) -> TransactionResponse:
+        """
+        Create a new transaction for an asset in the portfolio
+        :param user_id:
+        :param portfolio_id: str
+        :param transaction: TransactionBase
+        :return: TransactionResponse
+        """
+        # Check if the portfolio exists
+        portfolio = await self.portfolio_service.get_portfolio(portfolio_id, user_id)
+        if not portfolio:
+            raise ValueError('Portfolio not found...')
 
-    if not asset:
-      # Create a new asset if it doesn't exist
-      add_new_asset = Asset(
-        id=None,
-        portfolio_id=transaction.portfolio_id,
-        symbol=transaction.symbol,
-        name=transaction.name,
-        shares=transaction.shares,
-        purchase_price=transaction.price,
-        currency=transaction.currency,
-        user_id=transaction.user_id
-      )
-      asset: AssetResponse = await self.asset_service.create_asset(add_new_asset)
-    else:
-      # Update the existing asset
-      asset.shares += transaction.shares
-      asset.purchase_price = transaction.price # For now we will just update the purchase price, but we should calculate the average price instead
-      asset.currency = transaction.currency
-      await self.asset_service.update_asset(asset)
+        # Check if the asset exists in the portfolio by symbol, if not create a new asset
+        asset: Asset = await self.asset_service.get_asset_by_symbol(transaction.symbol)
+        asset_id = None
+        if not asset:
+            ticker = yf.Ticker(transaction.symbol)
+            ticker_info = ticker.info
 
-    transaction.asset_id = asset.id
+            add_new_asset = AssetCreate(
+                symbol=ticker_info.get('symbol'),
+                name=ticker_info.get('longName'),
+                asset_type=ticker_info.get('quoteType'),
+                sector=ticker_info.get('sector'),
+                industry=ticker_info.get('industry'),
+                currency=ticker_info.get('currency'),
+                portfolio_id=portfolio_id,
+            )
+            asset: AssetResponse = await self.asset_service.create_asset(add_new_asset)
+            asset_id = asset.id
+        else:
+            asset_id = str(asset['_id'])
 
-    transaction = Transaction(
-      id=None,
-      symbol=transaction.symbol,
-      operation=transaction.operation,
-      name=transaction.name,
-      shares=transaction.shares,
-      price=transaction.price,
-      currency=transaction.currency,
-      date=transaction.date,
-      portfolio_id=transaction.portfolio_id,
-      user_id=transaction.user_id,
-      fee_tax=transaction.fee_tax,
-      notes=transaction.notes
-    )
+        # Set dynamic values for the transaction and parse the date to a datetime object
+        transaction.asset_id = asset_id
+        transaction.portfolio_id = portfolio_id
+        transaction_data = Transaction(**transaction.model_dump(exclude={'symbol'}))
 
-    await self.repository.add_transaction(transaction)
-    return TransactionResponse(**transaction.model_dump())
+        result = await self.repository.add_transaction(transaction_data)
+        transaction.id = str(result.inserted_id)
+        return TransactionResponse(**transaction.model_dump())
 
-  async def get_all_transactions(self, portfolio_id: str) -> list[TransactionResponse]:
-    """
-    Get all transactions for a portfolio
-    :param portfolio_id: str
-    :rtype: list[TransactionResponse]
-    """
-    transactions = await self.repository.get_transactions_by_portfolio(portfolio_id)
-    return [TransactionResponse(**transaction.model_dump()) for transaction in transactions]
+    async def get_all_transactions(self, portfolio_id: str, user_id: str) -> list[TransactionResponse]:
+        """
+        Get all transactions for a portfolio
+        :param user_id: str
+        :param portfolio_id: str
+        :rtype: list[TransactionResponse]
+        """
+        portfolio = await self.portfolio_service.get_portfolio(portfolio_id, user_id)
+        if not portfolio:
+            raise ValueError('Portfolio not found...')
 
-  async def update_transaction(self, transaction_id: str, transaction_data: TransactionBase) -> TransactionResponse:
-    """
-    Update a transaction
-    :param transaction_data: TransactionBase
-    :param transaction_id: str
-    :rtype: TransactionResponse
-    """
-    transaction = await self.repository.get_transaction_by_id(transaction_id)
-    if not transaction:
-      raise ValueError('Transaction not found')
+        transactions = await self.repository.fetch_transactions_from_portfolio(portfolio_id)
+        return [TransactionResponse(**transaction.model_dump()) for transaction in transactions]
 
-    updated_transaction = transaction.copy(update=transaction_data.dict(exclude_unset=True))
-    await self.repository.update_transaction(transaction_id, updated_transaction)
-    return TransactionResponse(**updated_transaction.model_dump())
+    async def update_transaction(
+        self,
+        portfolio_id: str,
+        user_id: str,
+        transaction_id: str,
+        transaction_data: TransactionUpdate) -> TransactionResponse:
+        """
+        Update a transaction
+        :param user_id:
+        :param portfolio_id:
+        :param transaction_data: TransactionBase
+        :param transaction_id: str
+        :rtype: TransactionResponse
+        """
+        portfolio = await self.portfolio_service.get_portfolio(portfolio_id, user_id)
+        if not portfolio:
+            raise ValueError('Portfolio not found...')
 
-  async def delete_transaction(self, transaction_id: str) -> None:
-    """
-    Delete a transaction by its ID
-    :param transaction_id: str
-    :rtype: None
-    """
-    transaction = await self.repository.get_transaction_by_id(transaction_id)
-    if not transaction:
-      raise ValueError('Transaction not found')
-    await self.repository.delete_transaction(transaction_id)
+        transaction = await self.repository.find_transaction_by_id(transaction_id)
+        if not transaction:
+            raise ValueError('Transaction not found')
+
+        updated_transaction = await self.repository.update_transaction(transaction_id, transaction_data.model_dump(exclude_unset=True))
+        return TransactionResponse(**updated_transaction)
+
+    async def delete_transaction(
+        self,
+        portfolio_id: str,
+        user_id: str,
+        transaction_id: str) -> None:
+        """
+        Delete a transaction by its ID
+        :param user_id:
+        :param portfolio_id:
+        :param transaction_id: str
+        :rtype: None
+        """
+        portfolio = await self.portfolio_service.get_portfolio(portfolio_id, user_id)
+        if not portfolio:
+            raise ValueError('Portfolio not found...')
+
+        transaction = await self.repository.find_transaction_by_id(transaction_id)
+        if not transaction:
+            raise ValueError('Transaction not found')
+
+        await self.repository.delete_transaction(transaction_id)

@@ -7,10 +7,10 @@ from app.routes import user, auth, portfolio, asset, transaction
 
 # Initialize fastapi app
 app = FastAPI(
-  debug = True,
-  title = 'PortfolioPulse Demo API',
-  description = 'This is a demo API for PortfolioPulse',
-  version = '0.1.0'
+  debug = os.getenv('DEBUG', False),
+  title = os.getenv('APP_NAME', 'PortfolioPulse API'),
+  description = os.getenv('APP_DESCRIPTION', 'API for PortfolioPulse'),
+  version = os.getenv('APP_VERSION', '0.1.0')
 )
 prefix = "/api/v1"
 

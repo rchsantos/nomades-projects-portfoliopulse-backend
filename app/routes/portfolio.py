@@ -5,18 +5,17 @@ from fastapi import (
   Depends
 )
 
-from app.schemas.asset import PortfolioValueResponse
-from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate
+# from app.schemas.asset import PortfolioValueResponse
+from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate, PortfolioCreate
 from app.schemas.user import UserResponse
 from app.services.portfolio import PortfolioService
 from app.dependencies import get_portfolio_service, get_current_user
-
 
 router = APIRouter(
   prefix='/portfolio',
   tags=['portfolio']
 )
-
+#
 @router.get(
   '/',
   response_model=list[PortfolioResponse],
@@ -43,7 +42,7 @@ async def get_all_portfolio(
   response_description='Portfolio created successfully'
 )
 async def create_portfolio(
-  portfolio: PortfolioBase,
+  portfolio: PortfolioCreate,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
   current_user: UserResponse = Depends(get_current_user),
 ):
@@ -63,7 +62,7 @@ async def create_portfolio(
 )
 async def update_portfolio(
   portfolio_id: str,
-  portfolio: PortfolioUpdate,
+  portfolio_data: PortfolioUpdate,
   portfolio_service: PortfolioService = Depends(get_portfolio_service),
   current_user: UserResponse = Depends(get_current_user),
 ):
@@ -71,13 +70,13 @@ async def update_portfolio(
   try:
     return await portfolio_service.update_portfolio(
       portfolio_id,
-      portfolio,
+      portfolio_data,
       user.id
     )
   except ValueError as e:
     logging.error(f'Error updating portfolio: {e}')
     raise HTTPException(status_code=400, detail=str(e))
-
+#
 @router.delete(
   '/{portfolio_id}',
   status_code=204,
@@ -115,21 +114,21 @@ async def get_portfolio(
     logging.error(f'Error getting portfolio: {e}')
     raise HTTPException(status_code=404, detail=str(e))
 
-@router.get(
-  '/{portfolio_id}/total-value',
-  response_model=PortfolioValueResponse,
-  status_code=200,
-  description='Get total value, invested value, and return percentage of a portfolio by id',
-  response_description='Portfolio value retrieved successfully'
-)
-async def get_total_portfolio_value(
-  portfolio_id: str,
-  portfolio_service: PortfolioService = Depends(get_portfolio_service),
-  current_user: UserResponse = Depends(get_current_user),
-):
-  user = await current_user
-  try:
-    return await portfolio_service.calculate_portfolio_value(portfolio_id, user.id)
-  except ValueError as e:
-    logging.error(f'Error getting portfolio value: {e}')
-    raise HTTPException(status_code=404, detail=str(e))
+# @router.get(
+#   '/{portfolio_id}/total-value',
+#   response_model=PortfolioValueResponse,
+#   status_code=200,
+#   description='Get total value, invested value, and return percentage of a portfolio by id',
+#   response_description='Portfolio value retrieved successfully'
+# )
+# async def get_total_portfolio_value(
+#   portfolio_id: str,
+#   portfolio_service: PortfolioService = Depends(get_portfolio_service),
+#   current_user: UserResponse = Depends(get_current_user),
+# ):
+#   user = await current_user
+#   try:
+#     return await portfolio_service.calculate_portfolio_value(portfolio_id, user.id)
+#   except ValueError as e:
+#     logging.error(f'Error getting portfolio value: {e}')
+#     raise HTTPException(status_code=404, detail=str(e))

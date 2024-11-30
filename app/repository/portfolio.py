@@ -1,9 +1,8 @@
-from google.cloud.firestore_v1 import DocumentSnapshot, FieldFilter
+from bson import ObjectId
+from pymongo.results import InsertOneResult
 
-from app.core.firestore_db import db
-import app.schemas.portfolio as portfolio_schema
+from app.core.database import db
 from app.models.portfolio import Portfolio
-
 
 class PortfolioRepository:
   """
@@ -11,29 +10,25 @@ class PortfolioRepository:
     methods to interact with the database.
   """
   def __init__(self) -> None:
-    self.collection = db.collection(u'portfolios')
-    self.portfolio_schema = portfolio_schema
+    self.collection = db.get_collection('portfolios')
 
-  async def get_all_portfolios(self, user_id: str) -> list[Portfolio]:
+  async def fetch_all_portfolios(self, user_id: str) -> list[Portfolio]:
     """
-    Get all portfolios in the database from the current user
+    Fetch all portfolios in the database from the current user
     """
-    return [self.firestore_to_portfolio(portfolio) for portfolio in self.collection.where(
-      filter = FieldFilter(
-        u'user_id',
-        u'==',
-        user_id
-      )
-    ).get()]
+    portfolio_cursor = self.collection.find({'user_id': user_id})
+    portfolios = []
+    async for portfolio in portfolio_cursor:
+      portfolio['id'] = str(portfolio['_id'])
+      portfolios.append(Portfolio(**portfolio))
+    return portfolios
 
-  async def add_portfolio(self, portfolio: Portfolio) -> Portfolio:
+  async def add_portfolio(self, portfolio: Portfolio) -> InsertOneResult:
     """
     Add a new portfolio to the database
     """
     try:
-      _, portfolio_ref = self.collection.add(self.portfolio_to_firestore(portfolio))
-      portfolio.id = portfolio_ref.id
-      return portfolio
+      return await self.collection.insert_one(portfolio.model_dump())
     except Exception as e:
       raise ValueError(str(e))
 
@@ -45,13 +40,18 @@ class PortfolioRepository:
     :return: Portfolio
     """
     try:
-      portfolio_ref = self.collection.document(portfolio_id)
-      portfolio_ref.update(portfolio)
-      updated_portfolio = portfolio_ref.get()
-      return self.firestore_to_portfolio(updated_portfolio)
+      await self.collection.update_one(
+        {'_id': ObjectId(portfolio_id)},
+        {
+          '$set': portfolio,
+          '$currentDate': {'lastUpdated': True}
+        }
+      )
+      updated_portfolio = await self.collection.find_one({'_id': ObjectId(portfolio_id)})
+      updated_portfolio['id'] = str(updated_portfolio['_id'])
+      return updated_portfolio
     except Exception as e:
       raise ValueError(str(e))
-
 
   async def delete_portfolio(self, portfolio_id: str) -> None:
     """
@@ -60,56 +60,16 @@ class PortfolioRepository:
     :return: None
     """
     try:
-      self.collection.document(portfolio_id).delete()
+      await self.collection.delete_one({'_id': ObjectId(portfolio_id)})
     except Exception as e:
       raise ValueError(str(e))
 
 
-  async def get_portfolio_by_id(self, portfolio_id: str) -> Portfolio:
+  async def find_portfolio_by_id(self, portfolio_id: str) -> Portfolio:
     """
-    Get a portfolio by id
+    Find a portfolio by id
     :param portfolio_id: str
     :return: dict
     """
-    try:
-      portfolio = self.collection.document(portfolio_id).get()
-      if portfolio.exists:
-        return self.firestore_to_portfolio(portfolio)
-    except Exception as e:
-      raise ValueError(str(e))
-
-
-  def get_portfolio_by_user(self, user_id: str) -> list[dict]:
-    """
-    Get all portfolios by user
-    """
-    return [portfolio.to_dict() for portfolio in self.collection.where(
-      filter = FieldFilter(
-        u'user_id',
-        u'==',
-        user_id
-      )
-    ).get()]
-
-  @staticmethod
-  def portfolio_to_firestore(portfolio: Portfolio) -> dict:
-    return {
-      u'id': portfolio.id,
-      u'name': portfolio.name,
-      u'description': portfolio.description,
-      u'assets': portfolio.assets,
-      u'user_id': portfolio.user_id,
-      u'strategy': portfolio.strategy
-    }
-
-  @staticmethod
-  def firestore_to_portfolio(portfolio_document: DocumentSnapshot) -> Portfolio:
-    portfolio_data = portfolio_document.to_dict()
-    return Portfolio(
-      id = portfolio_document.id,
-      name = portfolio_data['name'],
-      description = portfolio_data['description'],
-      assets = portfolio_data['assets'] if 'assets' in portfolio_data else [],
-      user_id = portfolio_data['user_id'],
-      strategy = portfolio_data['strategy']
-    )
+    portfolio = await self.collection.find_one({'_id': ObjectId(portfolio_id)})
+    return portfolio

@@ -1,9 +1,9 @@
-from google.cloud.firestore_v1 import FieldFilter, DocumentSnapshot
+from bson import ObjectId
+from pymongo.results import InsertOneResult
 from sqlalchemy.testing.plugin.plugin_base import logging
 
-from app.core.firestore_db import db
+from app.core.database import db
 from app.models.asset import Asset
-import app.schemas.asset as asset_schema
 
 class AssetRepository:
   """
@@ -11,125 +11,72 @@ class AssetRepository:
     methods to interact with the database.
   """
   def __init__(self):
-    self.collection = db.collection(u'assets')
-    self.asset_schema = asset_schema
+    self.collection = db.get_collection('assets')
 
-  async def get_all_assets(self, portfolio_id: str, user_id: str) -> list[Asset]:
-    """
-    Get all assets for a given portfolio and user
-    :param portfolio_id: str
-    :param user_id: str
-    :return: list[Asset]
-    """
-    return [self.firestore_to_asset(asset) for asset in self.collection.where(
-      filter=FieldFilter(
-        u'portfolio_id', u'==', portfolio_id
-      )
-    ).where(
-      filter=FieldFilter(
-        u'user_id', u'==', user_id
-      )
-    ).get()]
 
-  async def add_asset(self, asset: Asset) -> Asset:
+  async def fetch_all_assets(self, portfolio_id: str) -> list[Asset]:
+    """
+    Get all assets in the database from the current user
+    """
+    asset_cursor = self.collection.find({'portfolio_ids': portfolio_id})
+    assets = []
+    async for asset in asset_cursor:
+      asset['id'] = str(asset['_id'])
+      assets.append(Asset(**asset))
+    return assets
+
+  async def add_asset(self, asset: Asset) -> InsertOneResult:
     """
     Add a new asset to the database
     :param asset: Asset
     :rtype: Asset
     """
     try:
-      _, asset_ref = self.collection.add(self.asset_to_firestore(asset))
-      asset.id = asset_ref.id
-      return asset
+      return await self.collection.insert_one(asset.model_dump())
     except Exception as e:
+      logging.error(f'Error adding asset: {e}')
       raise ValueError(str(e))
 
-  async def update_asset(self, asset: asset_schema.AssetUpdate) -> Asset:
+  async def update_asset(self, asset_id: str, asset: dict) -> dict:
     """
     Update an asset in the database
-    :param asset: AssetUpdate
+    :param asset_id: str
+    :param asset: dict
     :rtype: Asset
     """
     try:
-      print('Asset ID:', asset.id)
-      asset_ref = self.collection.document(asset.id)
-      asset_ref.update(asset.model_dump(exclude_unset=True))
-      updated_asset = asset_ref.get()
-      return self.firestore_to_asset(updated_asset)
+      await self.collection.update_one(
+        {'_id': ObjectId(asset_id)},
+        {
+          '$set': asset,
+          '$currentDate': {'lastUpdated': True}
+        }
+      )
+      return await self.collection.find_one({'_id': ObjectId(asset_id)})
     except Exception as e:
-      logging.error(f'Error updating asset: {e}')
       raise ValueError(str(e))
 
-  async def delete_asset(self, asset_id: str) -> None:
+  async def delete_asset(self, asset_id: str):
     """
     Delete an asset from the database
     :param asset_id: str
-    :rtype: None
     """
     try:
-      self.collection.document(asset_id).delete()
+      await self.collection.delete_one({'_id': ObjectId(asset_id)})
     except Exception as e:
       raise ValueError(str(e))
 
-  async def get_asset_by_id(self, asset_id: str):
-    try:
-      asset = self.collection.document(asset_id).get()
-      return self.firestore_to_asset(asset)
-    except Exception as e:
-      raise ValueError(str(e))
-
-  async def get_asset_by_symbol(self, portfolio_id: str, symbol: str):
+  async def find_asset_by_id(self, asset_id: str) -> dict:
     """
-    Get an asset by symbol
-    :param portfolio_id: str
-    :param symbol: str
+    Find an asset by ID
+    :param asset_id: str
     :rtype: Asset
     """
-    try:
-      asset_query = self.collection.where(
-        filter = FieldFilter(
-          u'portfolio_id',
-          u'==',
-          portfolio_id
-        )
-      ).where(
-        filter = FieldFilter(
-          u'symbol',
-          u'==',
-          symbol
-        )
-      ).get()
+    return await self.collection.find_one({'_id': ObjectId(asset_id)})
 
-      if not asset_query:
-        raise ValueError('Asset not found...')
-
-      return self.firestore_to_asset(asset_query[0])
-    except Exception as e:
-      raise ValueError(str(e))
-
-  @staticmethod
-  def asset_to_firestore(asset: Asset) -> dict:
-    return {
-      u'id': asset.id,
-      u'name': asset.name,
-      u'symbol': asset.symbol,
-      u'shares': asset.shares,
-      u'purchase_price': asset.purchase_price,
-      u'currency': asset.currency,
-      u'portfolio_id': asset.portfolio_id,
-      u'user_id': asset.user_id
-    }
-
-  @staticmethod
-  def firestore_to_asset(asset_document: DocumentSnapshot) -> Asset:
-    asset_data = asset_document.to_dict()
-    return Asset(
-      id = asset_document.id,
-      name = asset_data['name'],
-      symbol = asset_data['symbol'],
-      shares = asset_data['shares'],
-      purchase_price = asset_data['purchase_price'],
-      currency = asset_data['currency'],
-      portfolio_id = asset_data['portfolio_id'],
-      user_id = asset_data['user_id'],
-    )
+  async def find_asset_by_symbol(self, symbol: str):
+    """
+    Find an asset by symbol
+    :param symbol: str
+    """
+    return await self.collection.find_one({'symbol': symbol})

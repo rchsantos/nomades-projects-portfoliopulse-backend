@@ -1,3 +1,4 @@
+from bson import ObjectId
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -7,7 +8,7 @@ class Portfolio(BaseModel):
   id: Optional[str] = Field(None)
   user_id: str
   name: str
-  assets: List[Asset] = []
+  assets: Optional[List] = None
   description: Optional[str] = None
   strategy: Optional[str] = None
   total_value: Optional[float] = 0.0
@@ -16,3 +17,4 @@ class Portfolio(BaseModel):
 
   class Config:
     from_attributes = True
+    json_encoders = { ObjectId: str }

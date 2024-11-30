@@ -148,8 +148,6 @@ class AuthHandler:
     :rtype: UserResponse
     """
     # Ensure the current user is authenticated and have all necessary user data
-
-
     return await self.auth_wrapper(auth)
 
 # def get_auth_handler(user_service: UserService = Depends(get_user_service())):

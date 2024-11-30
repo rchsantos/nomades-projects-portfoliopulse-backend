@@ -19,7 +19,7 @@ router = APIRouter(
   '/',
   response_model=list[UserResponse],
   status_code=status.HTTP_200_OK,
-  description='Get all users from the database',
+  description='Fetch all users from the database',
   response_description='List of all users'
 )
 async def get_all_users(user_service: UserService = Depends(get_user_service)):
@@ -39,7 +39,7 @@ async def create_user(
   user: UserCreate,
   user_service: UserService = Depends(get_user_service)):
   try:
-    return user_service.create_user(user)
+    return await user_service.create_user(user)
   except ValueError as e:
     logging.error(f"Error creating user: {e}")
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -58,19 +58,27 @@ async def update_user(
   current_user: UserResponse = Depends(get_current_user)
 ):
     try:
-      updated_user = await user_service.update_user(user_id, user_data.model_dump(exclude_unset=True))
+      updated_user = await user_service.update_user(
+        user_id,
+        user_data
+      )
       return updated_user
     except ValueError as e:
       raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.delete('/{user_id}')
+@router.delete(
+  '/{user_id}',
+  status_code=status.HTTP_204_NO_CONTENT,
+  description='Delete a user from the database',
+  response_description='User deleted successfully'
+)
 async def delete_user(
   user_id: str,
   user_service: UserService = Depends(get_user_service),
   current_user: UserResponse = Depends(get_current_user)
 ):
+  user = await current_user
   try:
     await user_service.delete_user(user_id)
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-  return {"message": 'User deleted successfully'}
