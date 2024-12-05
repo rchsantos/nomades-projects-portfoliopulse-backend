@@ -6,7 +6,8 @@ from fastapi import (
 )
 
 # from app.schemas.asset import PortfolioValueResponse
-from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate, PortfolioCreate
+from app.schemas.portfolio import PortfolioResponse, PortfolioBase, PortfolioUpdate, PortfolioCreate, \
+    PortfolioHoldingsResponse, PortfolioAnalysisResponse
 from app.schemas.user import UserResponse
 from app.services.portfolio import PortfolioService
 from app.dependencies import get_portfolio_service, get_current_user
@@ -113,6 +114,54 @@ async def get_portfolio(
   except ValueError as e:
     logging.error(f'Error getting portfolio: {e}')
     raise HTTPException(status_code=404, detail=str(e))
+
+@router.get(
+    '/{portfolio_id}/holdings',
+    response_model=PortfolioHoldingsResponse,
+    status_code=200,
+    description='Fetch all holdings of a portfolio by id',
+    response_description='Holdings retrieved successfully'
+)
+async def get_portfolio_holdings(
+    portfolio_id: str,
+    portfolio_service: PortfolioService = Depends(get_portfolio_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Fetch all holdings of a specific portfolio by its ID.
+    """
+    user = await current_user
+    try:
+        holdings = await portfolio_service.fetch_portfolio_holdings(portfolio_id, user.id)
+        return PortfolioHoldingsResponse(holdings=holdings)
+    except ValueError as e:
+        logging.error(f'Error getting portfolio holdings: {e}')
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get(
+    '/{portfolio_id}/analysis',
+    response_model=PortfolioAnalysisResponse,
+    status_code=200,
+    description='Fetch a financial analysis of the portfolio, including total value and asset weights',
+    response_description='Portfolio analysis retrieved successfully'
+)
+async def get_portfolio_analysis(
+    portfolio_id: str,
+    portfolio_service: PortfolioService = Depends(get_portfolio_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Provide a financial analysis of a specific portfolio by its ID,
+    including total value and asset weights.
+    """
+    user = await current_user
+    try:
+        return await portfolio_service.calculate_portfolio_analysis(portfolio_id, user.id)
+    except ValueError as e:
+        logging.error(f'Error getting portfolio analysis: {e}')
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 
 # @router.get(
 #   '/{portfolio_id}/total-value',

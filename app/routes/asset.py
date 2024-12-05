@@ -15,8 +15,8 @@ router = APIRouter(
   '/',
   response_model=list[AssetResponse],
   status_code=status.HTTP_200_OK,
-  description='Get all assets',
-  response_description='List of all assets'
+  description='Get all assets in the portfolio',
+  response_description='List of all assets in the portfolio'
 )
 async def get_assets(
   portfolio_id: str,
@@ -83,5 +83,23 @@ async def delete_asset(
   try:
     user = await current_user
     await asset_service.delete_asset(asset_id, portfolio_id)
+  except ValueError as e:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.get(
+  '/{asset_id}',
+  response_model=AssetResponse,
+  status_code=status.HTTP_200_OK,
+  description='Get an asset',
+  response_description='Asset retrieved successfully'
+)
+async def get_asset(
+  asset_id: str,
+  asset_service: AssetService = Depends(get_asset_service),
+  current_user: UserResponse = Depends(get_current_user)
+):
+  try:
+    user = await current_user
+    return await asset_service.get_asset_by_id(asset_id)
   except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

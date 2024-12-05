@@ -24,7 +24,9 @@ class TransactionService:
         self.portfolio_service = portfolio_service
         self.asset_service = asset_service
 
-    async def create_transaction(self, portfolio_id: str, user_id: str,
+    async def create_transaction(self,
+                                 portfolio_id: str,
+                                 user_id: str,
                                  transaction: TransactionCreate) -> TransactionResponse:
         """
         Create a new transaction for an asset in the portfolio
@@ -68,8 +70,9 @@ class TransactionService:
         transaction.id = str(result.inserted_id)
         return TransactionResponse(**transaction.model_dump())
 
-    async def get_all_transactions(self, portfolio_id: str, user_id: str) -> list[TransactionResponse]:
+    async def fetch_all_transactions(self, portfolio_id: str, user_id: str) -> list[TransactionResponse]:
         """
+        @TODO: Check if this method is necessary, since we have a recollection method to retrieve all transactions of a portfolio in the portfolio service
         Get all transactions for a portfolio
         :param user_id: str
         :param portfolio_id: str

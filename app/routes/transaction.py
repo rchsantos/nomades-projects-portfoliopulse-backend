@@ -24,7 +24,7 @@ async def get_all_transactions(
 ):
   try:
     user = await current_user
-    return await transaction_service.get_all_transactions(portfolio_id, user.id)
+    return await transaction_service.fetch_all_transactions(portfolio_id, user.id)
   except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
 

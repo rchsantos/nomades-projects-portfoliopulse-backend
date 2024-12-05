@@ -11,7 +11,7 @@ class AssetService:
 
     async def get_all_assets(self, portfolio_id: str) -> list[AssetResponse]:
         """
-        Get all assets in the database
+        Get all assets in portfolio
         :param portfolio_id: str
         :rtype: list[AssetResponse]
         """
@@ -26,11 +26,10 @@ class AssetService:
         :param asset_data: AssetCreate
         :rtype: AssetResponse
         """
-        asset = Asset(**asset_data.model_dump())
+        asset = Asset(**asset_data)
         result: InsertOneResult = await self.repository.add_asset(asset)
         asset.id = str(result.inserted_id)
         return AssetResponse(**asset.model_dump())
-
 
     async def update_asset(
         self,
@@ -55,7 +54,6 @@ class AssetService:
         updated_asset['id'] = asset_id
 
         return AssetResponse(**updated_asset)
-
 
     async def delete_asset(self, asset_id: str, portfolio_id: str):
         """
@@ -86,6 +84,7 @@ class AssetService:
         """
         asset = await self.repository.find_asset_by_id(asset_id)
         if asset:
+            asset['id'] = asset_id
             return AssetResponse(**asset)
         raise ValueError('Asset not found...')
 
@@ -110,3 +109,15 @@ class AssetService:
         if not asset:
             return None
         return Asset(**asset)
+
+    # Fetch a list of assets by their ID's
+    async def get_assets_by_ids(self, asset_ids: list[str]) -> list[Asset]:
+        """
+        Fetch a list of assets by their ID's
+        :param asset_ids: list[str]
+        :rtype: list[Asset]
+        """
+        assets: list[dict] = await self.repository.find_assets_by_ids(asset_ids)
+        if assets:
+            return [Asset(**asset) for asset in assets]
+        raise ValueError('No assets found...')
