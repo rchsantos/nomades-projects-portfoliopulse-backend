@@ -41,6 +41,8 @@ class PortfolioHoldingsResponse(BaseModel):
 
 class WeightDetail(BaseModel):
     asset: Asset
+    quantity: float
+    current_value: float
     weight: float
 
 

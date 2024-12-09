@@ -229,7 +229,7 @@ class PortfolioService:
 
         # Prepare the analysis result
         weights = [
-            WeightDetail(asset=row["asset"], weight=row["weight"])
+            WeightDetail(asset=row['asset'], quantity=row['quantity'],current_value=row['current_value'], weight=row['weight'])
             for _, row in df.iterrows()
         ]
         total_value = df['current_value'].sum()
