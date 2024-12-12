@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+        - PYTHONDONTWRITEBYTECODE=1
+        - PYTHONUNBUFFERED=1
+        - TF_CPP_MIN_LOG_LEVEL=2
     ports:
       - "5050:5050"
     env_file:
