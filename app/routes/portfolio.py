@@ -196,3 +196,35 @@ async def get_lstm_predictions(
     except ValueError as e:
         logging.error(f'Error getting LSTM predictions: {e}')
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get(
+    '/{portfolio_id}/lstm-predictions/{symbol}',
+    # response_model=PortfolioAnalysisResponse,
+    status_code=200,
+    description='Fetch LSTM predictions for future prices of a specific asset in the portfolio using LSTM',
+    response_description='LSTM predictions retrieved successfully',
+)
+async def get_lstm_predictions_for_asset(
+    portfolio_id: str,
+    symbol: str,
+    days: int = 7,  # Default to 7 days to predict future prices
+    portfolio_service: PortfolioService = Depends(get_portfolio_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Predict future prices for a specific asset in a portfolio using LSTM.
+    :param symbol: Asset symbol
+    :param portfolio_id: Portfolio ID
+    :param days: Number of days to predict future prices
+    :param portfolio_service: Service for portfolio-related operations
+    :param current_user: The current authenticated user
+    :return: List of predicted prices for the specified asset
+    """
+    user = await current_user
+    try:
+        # Predict future prices for the specified asset
+        predictions = await portfolio_service.get_lstm_predictions_for_asset(portfolio_id, symbol, user.id, days)
+        return predictions
+    except ValueError as e:
+        logging.error(f'Error getting LSTM predictions for asset: {e}')
+        raise HTTPException(status_code=400, detail=str(e))

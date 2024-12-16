@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from keras.src.layers import Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Input
 
@@ -13,8 +14,11 @@ def build_lstm_model(input_shape):
 
     model = Sequential()
     model.add(Input(shape=input_shape))
-    model.add(LSTM(units=50, return_sequences=True))
-    model.add(LSTM(units=50))
+    model.add(LSTM(units=60, return_sequences=True))
+    model.add(Dropout(0.3))
+    model.add(LSTM(units=120, return_sequences=False))
+    model.add(Dropout(0.3))
+    model.add(Dense(units=20))
     model.add(Dense(units=1))
     model.compile(optimizer='adam', loss='mean_squared_error')
 
