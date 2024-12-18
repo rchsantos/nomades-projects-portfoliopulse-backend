@@ -3,7 +3,14 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import user, auth, portfolio, asset, transaction
+from app.routes import (
+    user,
+    auth,
+    portfolio,
+    asset,
+    transaction,
+    prediction
+)
 
 # Initialize fastapi app
 app = FastAPI(
@@ -39,6 +46,7 @@ app.include_router(user.router, prefix=prefix)
 app.include_router(portfolio.router, prefix=prefix)
 app.include_router(asset.router, prefix=prefix)
 app.include_router(transaction.router, prefix=prefix)
+app.include_router(prediction.router, prefix=prefix)
 
 
 if __name__ == "__main__":

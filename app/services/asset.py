@@ -26,7 +26,7 @@ class AssetService:
         :param asset_data: AssetCreate
         :rtype: AssetResponse
         """
-        asset = Asset(**asset_data)
+        asset = Asset(**asset_data.model_dump())
         result: InsertOneResult = await self.repository.add_asset(asset)
         asset.id = str(result.inserted_id)
         return AssetResponse(**asset.model_dump())

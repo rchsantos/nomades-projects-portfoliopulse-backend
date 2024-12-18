@@ -1,8 +1,13 @@
+# Import necessary libraries
 import logging
+from datetime import datetime, timedelta
+
+import numpy as np
 import pandas as pd
 import yfinance as yf
 from pymongo.results import InsertOneResult
 
+# Import necessary modules App
 from app.models.portfolio import Portfolio
 from app.repository.portfolio import PortfolioRepository
 from app.schemas.asset import AssetUpdate, AssetResponse
@@ -10,6 +15,11 @@ from app.schemas.portfolio import PortfolioResponse, PortfolioUpdate, PortfolioC
     WeightDetail
 from app.schemas.transaction import TransactionResponse
 from app.services.asset import AssetService
+
+# Import necessary modules machine learning
+from app.machine_learning.data_processing import prepare_lstm_data
+from app.machine_learning.lstm import build_lstm_model, predict_future_prices
+
 
 class PortfolioService:
     """
@@ -252,3 +262,163 @@ class PortfolioService:
         transactions = await self.repository.fetch_all_transactions(portfolio_id)
         return [TransactionResponse(**transaction.model_dump()) for transaction in transactions]
 
+    async def get_lstm_predictions_for_holdings(self, portfolio_id: str, user_id: str, days: int) -> dict :
+        """
+        Predict future prices for all holdings in a portfolio using LSTM.
+        :param portfolio_id: Portfolio ID
+        :param user_id: The current authenticated user ID
+        :param days: Number of days to predict for each holding.
+        :return: Dictionary with predictions for each holding in the portfolio
+        """
+        predictions = {}
+
+        # Check if the portfolio exists
+        portfolio = await self.get_portfolio(portfolio_id, user_id)
+        if not portfolio:
+            raise ValueError('Portfolio not found...')
+
+        holdings = await self.fetch_portfolio_holdings(portfolio_id, user_id)
+        if not holdings:
+            raise ValueError('No holdings found for the portfolio...')
+
+        for holding in holdings:
+            try:
+                # Fetch historical prices for the asset
+                df: pd.DataFrame = await self.fetch_historical_data(holding.symbol)
+                if df.empty:
+                    raise ValueError(f'No historical data found for {holding.symbol}...')
+
+                # Extract the closing prices
+                close_prices = df['Close'].values
+
+                # Prepare the data for LSTM
+                X, _, scaler = prepare_lstm_data(close_prices)
+
+                # Build and train the LSTM model
+                model = build_lstm_model((X.shape[1], 1))
+                model.fit(X, X, epochs=80, batch_size=8, verbose=1)
+
+                model.summary()
+
+                # Predict future prices
+                last_sequence = X[-1] # Last sequence in the dataset
+                holding_predictions = predict_future_prices(model, last_sequence, scaler, days)
+
+                # Convert predictions to native Python types (e.g., float)
+                holding_predictions = [float(pred) for pred in holding_predictions]
+
+                # Store the predictions for the holding
+                predictions[holding.symbol] = holding_predictions
+
+            except Exception as e:
+                logging.error(f'Error predicting prices for {holding.symbol}: {str(e)}')
+                predictions[holding.symbol] = {f"error": str(e)}
+
+        return predictions
+
+    async def get_lstm_predictions_for_asset(self, portfolio_id: str, symbol: str, user_id: str,  days: int) -> dict:
+        """
+        Predict future prices for a specific asset in a portfolio using LSTM.
+        :param symbol: Asset symbol (e.g., "AAPL" for Apple).
+        :param user_id: The current authenticated user ID
+        :param portfolio_id: Portfolio ID
+        :param days: Number of days to predict for the asset.
+        :return: List of predicted prices for the asset
+        """
+        try:
+            # Check if the portfolio exists
+            portfolio = await self.get_portfolio(portfolio_id, user_id)
+            if not portfolio:
+                raise ValueError('Portfolio not found...')
+
+            # Fetch holdings for the portfolio
+            holdings = await self.fetch_portfolio_holdings(portfolio_id, user_id)
+            if not holdings:
+                raise ValueError('No holdings found for the portfolio...')
+
+            # Find the holding with the specified asset ID
+            holding = next((h for h in holdings if h.symbol == symbol), None)
+            if not holding:
+                raise ValueError(f'Asset {symbol} not found in the portfolio...')
+
+            # Fetch historical prices for the asset
+            df: pd.DataFrame = await self.fetch_historical_data(symbol) # @TODO: Implement the choice of the date range
+            if df.empty:
+                raise ValueError(f'No historical data found for {symbol}...')
+
+            # Extract the closing prices
+            close_prices = df['Close'].values
+
+            # Prepare the data for LSTM
+            X, _, scaler = prepare_lstm_data(close_prices)
+
+            # Build and train the LSTM model
+            model = build_lstm_model((X.shape[1], 1))
+            model.fit(X, X, epochs=80, batch_size=8, verbose=1)
+
+            model.summary()
+
+            # Predict future prices
+            last_sequence = X[-1]  # Last sequence in the dataset
+            predictions = predict_future_prices(model, last_sequence, scaler, days)
+
+            # Convert predictions to native Python types (e.g., float)
+            predictions = [float(pred) for pred in predictions]
+
+            today = datetime.now()
+            predictions_dates = [(today + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(days)]
+
+            return {
+                'symbol': symbol,
+                'dates': predictions_dates,
+                'predictions': predictions
+            }
+
+        except Exception as e:
+            logging.error(f'Error predicting prices for {symbol}: {str(e)}')
+            return {f"error": str(e)}
+
+    async def fetch_historical_data(self, ticker: str, start_date: str = '2018-01-01', end_date: str = '2024-12-16') -> pd.DataFrame:
+        """
+        Fetch and clean historical data for a given asset (ticker) using yfinance.
+        :param ticker: Asset symbol (e.g., "AAPL" for Apple).
+        :param start_date: Start date for the historical data (format: YYYY-MM-DD).
+        :param end_date: End date for the historical data (format: YYYY-MM-DD).
+        :return: Pandas DataFrame containing cleaned historical data.
+        """
+        try:
+            # fetch raw data from Yahoo Finance
+            data = yf.download(ticker, start=start_date, end=end_date, group_by="ticker")  # Ensure proper grouping
+
+            # Debug: Afficher les 5 premières lignes des données téléchargées
+            print("Raw data from yfinance:\n", data.head())
+
+            # If no data is returned, raise an exception
+            if data.empty:
+                raise ValueError(f'No historical data found for {ticker}...')
+
+            if isinstance(data.columns, pd.MultiIndex):
+                print("Detected MultiIndex columns. Flattening...")
+                data.columns = data.columns.droplevel(0)  # Remove the first level (e.g., "Price")
+
+                # Debug: Print columns after flattening
+            print("Columns after flattening:", data.columns)
+
+            data = data.reset_index()
+            # Step 4: Ensure 'Date' is a datetime column
+            data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
+            if data['Date'].isna().any():
+                raise ValueError("Some dates are NaT after conversion.")
+
+            # Convert Dataframe and clean data
+            df = data[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
+            df['Close'] = df['Close'].ffill() # Fill missing values with the previous day's close price
+            df = df[df['Close'] > 0] # Remove rows with zero or negative close prices
+
+            # Vérifions la colonne Date après reset_index()
+            print("Data after reset_index():\n", df.head())
+
+            return df
+        except Exception as e:
+            logging.error(f'Error fetching historical data for {ticker}: {str(e)}')
+            return pd.DataFrame()
