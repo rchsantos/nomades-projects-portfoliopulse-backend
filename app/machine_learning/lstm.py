@@ -22,21 +22,24 @@ def build_lstm_model(input_shape):
     model.add(Dense(units=1))
     model.compile(optimizer='adam', loss='mean_squared_error')
 
+    print(f"Built LSTM model with input shape {input_shape}")
+    model.summary()
+
     return model
 
-def predict_future_prices(model, last_sequence, scaler, days):
+def predict_future_prices(model, last_sequence, scaler, period):
     """
     Predict future prices using a trained LSTM model.
     :param model: Trained LSTM model.
     :param last_sequence: Last known sequence of prices (normalized).
     :param scaler: Scaler used for normalization and inverse transformation.
-    :param days: Number of days to predict.
+    :param period: Number of days to predict.
     :return: List of predicted prices (denormalized).
     """
     predictions = []
     current_sequence = last_sequence.copy()
 
-    for _ in range(days):
+    for _ in range(period):
         # Reshape current sequence for prediction
         prediction = model.predict(current_sequence.reshape(1, -1, 1))
         denormalized_prediction = scaler.inverse_transform(prediction.reshape(-1, 1))[0, 0]

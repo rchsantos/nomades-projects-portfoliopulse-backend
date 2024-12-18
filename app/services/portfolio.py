@@ -378,7 +378,7 @@ class PortfolioService:
             logging.error(f'Error predicting prices for {symbol}: {str(e)}')
             return {f"error": str(e)}
 
-    async def fetch_historical_data(self, ticker: str, start_date: str = '2018-01-01', end_date: str = '2024-12-12') -> pd.DataFrame:
+    async def fetch_historical_data(self, ticker: str, start_date: str = '2018-01-01', end_date: str = '2024-12-16') -> pd.DataFrame:
         """
         Fetch and clean historical data for a given asset (ticker) using yfinance.
         :param ticker: Asset symbol (e.g., "AAPL" for Apple).
@@ -388,17 +388,35 @@ class PortfolioService:
         """
         try:
             # fetch raw data from Yahoo Finance
-            data = yf.download(ticker, start=start_date, end=end_date)
+            data = yf.download(ticker, start=start_date, end=end_date, group_by="ticker")  # Ensure proper grouping
+
+            # Debug: Afficher les 5 premières lignes des données téléchargées
+            print("Raw data from yfinance:\n", data.head())
 
             # If no data is returned, raise an exception
             if data.empty:
                 raise ValueError(f'No historical data found for {ticker}...')
 
+            if isinstance(data.columns, pd.MultiIndex):
+                print("Detected MultiIndex columns. Flattening...")
+                data.columns = data.columns.droplevel(0)  # Remove the first level (e.g., "Price")
+
+                # Debug: Print columns after flattening
+            print("Columns after flattening:", data.columns)
+
+            data = data.reset_index()
+            # Step 4: Ensure 'Date' is a datetime column
+            data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
+            if data['Date'].isna().any():
+                raise ValueError("Some dates are NaT after conversion.")
+
             # Convert Dataframe and clean data
-            df = data[['Open', 'High', 'Low', 'Close', 'Volume']].reset_index()
+            df = data[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
             df['Close'] = df['Close'].ffill() # Fill missing values with the previous day's close price
             df = df[df['Close'] > 0] # Remove rows with zero or negative close prices
 
+            # Vérifions la colonne Date après reset_index()
+            print("Data after reset_index():\n", df.head())
 
             return df
         except Exception as e:

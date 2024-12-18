@@ -3,10 +3,12 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.repository.asset import AssetRepository
 from app.repository.portfolio import PortfolioRepository
+from app.repository.prediction import PredictionRepository
 from app.repository.transaction import TransactionRepository
 from app.repository.user import UserRepository
 from app.services.asset import AssetService
 from app.services.portfolio import PortfolioService
+from app.services.prediction import PredictionService
 from app.services.transaction import TransactionService
 from app.services.user import UserService
 from app.utils.jwt import AuthHandler
@@ -15,7 +17,6 @@ from app.utils.jwt import AuthHandler
 def get_user_service() -> UserService:
     user_repository = UserRepository()
     return UserService(repository=user_repository)
-
 
 def get_current_user(auth: HTTPAuthorizationCredentials = Security(HTTPBearer())):
     user_service = get_user_service()
@@ -44,3 +45,10 @@ def get_transaction_service():
     portfolio_service = PortfolioService(portfolio_repository, asset_repository)
     asset_service = AssetService(asset_repository)
     return TransactionService(transaction_repository, portfolio_service, asset_service)
+
+def get_prediction_service():
+    portfolio_repository = PortfolioRepository()
+    asset_repository = AssetRepository()
+    portfolio_service = PortfolioService(portfolio_repository, asset_repository)
+    prediction_repository = PredictionRepository()
+    return PredictionService(prediction_repository, portfolio_service)

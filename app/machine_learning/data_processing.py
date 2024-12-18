@@ -13,7 +13,7 @@ def prepare_lstm_data(data: np.array, look_back: int = 60) -> tuple:
 
     X, Y = [], []
     for i in range(look_back, len(data_scaled)):
-        X.append(data_scaled[i - look_back:i, 0]) # Take the last `look_back` days as input
+        X.append(data_scaled[i - look_back:i, 0]) # Take the last look_back days as input
         Y.append(data_scaled[i, 0]) # Target price to predict
 
     return np.array(X), np.array(Y), scaler
